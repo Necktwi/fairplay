@@ -1,0 +1,54 @@
+/* 
+    Document   : ferryplayer
+    Created on : 21 May, 2013, 11:16:16 AM
+    Author     : gowtham
+    Description:
+*/
+
+root {
+    display: block;
+}
+
+.ferryvideo{
+    position: relative;
+}
+
+.ferryvideo .container{
+    position: absolute;
+}
+
+.ferryvideo .controls{
+    position: absolute;
+    display: none;
+}
+
+.ferryvideo .controls.visible{
+    display:block;
+}
+
+.ferryvideo .info{
+    position: absolute;
+}
+
+.ferryvideo .gauge{
+    position: absolute;
+    height: 5px;
+    background-color: black;
+    bottom: 0px;
+    left: 0px;
+    cursor: pointer;
+}
+
+.ferryvideo .gauge .buffer{
+    position: relative;
+    height: 3px;
+    top: 1px;
+    left: 1px;
+    background-color: #ccc
+}
+
+.ferryvideo .gauge .buffer .fill{
+    position: relative;
+    height: 3px;
+    background-color: white;
+}
