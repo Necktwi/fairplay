@@ -73,39 +73,53 @@ window.ferryplayer = {
                 m3ul.i = -1;
                 m3ul.tags = [];
                 m3ul.i++;
+                var maxSegmentLength = 0;
+                var m3u8version;
+                var allowCache;
+                var mediaSequence;
                 if (m3ul[m3ul.i] === "#EXTM3U") {
-                    m3ul.i++;
-                    maxSegmentLength = parseFloat(m3ul[m3ul.i].slice(22));
-                    if (maxSegmentLength > 0) {
-                        while (m3ul[m3ul.i + 1]) {
-                            m3ul.i++;
-                            if (m3ul[m3ul.i] !== "") {
-                                if (m3ul[m3ul.i][0] !== "#") {
-                                    var play = {tags: [], URI: ""};
-                                    for (var i = 0; i < m3ul.tags.length; i++) {
-                                        if (m3ul.tags[i] && m3ul.tags[i].slice(0, 7) === "#EXTINF") {
-                                            var t = m3ul.tags.splice(i, 1)[0];
-                                            i--;
-                                            play.duration = parseFloat(t.slice(8, t.indexOf(",")));
-                                            totalDuration += play.duration;
-                                            play.tags.push(t);
+                    while (m3ul[m3ul.i + 1]) {
+                        m3ul.i++;
+                        if (m3ul[m3ul.i] !== "") {
+                            if (m3ul[m3ul.i][0] !== "#") {
+                                var play = {tags: [], URI: ""};
+                                for (var i = 0; i < m3ul.tags.length; i++) {
+                                    if (m3ul.tags[i] && m3ul.tags[i].slice(0, 7) === "#EXTINF") {
+                                        var t = m3ul.tags.splice(i, 1)[0];
+                                        i--;
+                                        if ((play.duration = parseFloat(t.slice(8, t.indexOf(",")))) > maxSegmentLength) {
+                                            throw "segment length exceeded max segment length";
                                         }
+                                        totalDuration += play.duration;
+                                        play.tags.push(t);
                                     }
-                                    if (validURI(m3ul[m3ul.i])) {
-                                        play.URI = m3ul[m3ul.i];
-                                        playlist.push(play);
+                                }
+                                if (validURI(m3ul[m3ul.i])) {
+                                    play.URI = m3ul[m3ul.i];
+                                    playlist.push(play);
+                                }
+                            } else {
+                                if (m3ul[m3ul.i].slice(0, 4) === "#EXT") {
+                                    if (m3ul[m3ul.i].slice(0, 21) === "#EXT-X-TARGETDURATION") {
+                                        maxSegmentLength = parseFloat(m3ul[m3ul.i].slice(22));
+                                    } else if (m3ul[m3ul.i].slice(0, 21) === "#EXT-X-MEDIA-SEQUENCE") {
+                                        mediaSequence = parseFloat(m3ul[m3ul.i].slice(22));
+                                    } else if (m3ul[m3ul.i].slice(0, 14) === "#EXT-X-VERSION") {
+                                        m3u8version = parseFloat(m3ul[m3ul.i].slice(15));
+                                    } else if (m3ul[m3ul.i].slice(0, 18) === "#EXT-X-ALLOW-CACHE") {
+                                        allowCache = m3ul[m3ul.i].slice(19).toLowerCase() === "yes";
+                                    } else if (m3ul[m3ul.i] === "#EXT-X-ENDLIST") {
+                                        break;
+                                    } else {
+                                        m3ul.tags.push(m3ul[m3ul.i]);
                                     }
                                 } else {
-                                    if (m3ul[m3ul.i].slice(0, 4) === "#EXT") {
-                                        m3ul.tags.push(m3ul[m3ul.i]);
-                                    } else {
-                                        throw "Invalid extended m3u";
-                                    }
+                                    throw "Invalid extended m3u";
                                 }
                             }
                         }
-                        setTimeout(processNextSegment, 0);
                     }
+                    setTimeout(processNextSegment, 0);
                 } else {
                     throw "Invalid extended m3u";
                 }
@@ -119,7 +133,7 @@ window.ferryplayer = {
                         video.classList.add("ferrymediasegment");
                         video.onloadprogress = function() {
                             this.bufferwatch = function() {
-                                if (parseInt(video.buffered.end(0) / video.duration) === 1) {
+                                if (parseInt(video.buffered.end(0).toFixed(6) / video.duration) === 1) {
                                     delete video.bufferwatch;
                                     clearInterval(video.bufferwatcher);
                                     delete video.bufferwatcher;
