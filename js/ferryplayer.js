@@ -52,6 +52,9 @@ window.ferryplayer = {
             var totalDuration = 0;
             var playProgressInterval;
             var fillFraction = 0;
+            var m3u8version;
+            var allowCache;
+            var mediaSequence;
             segments.currentsegmentindex = -1;
             fvideo.addEventListener("resize", function() {
                 resizeControls();
@@ -73,10 +76,6 @@ window.ferryplayer = {
                 m3ul.i = -1;
                 m3ul.tags = [];
                 m3ul.i++;
-                var maxSegmentLength = 0;
-                var m3u8version;
-                var allowCache;
-                var mediaSequence;
                 if (m3ul[m3ul.i] === "#EXTM3U") {
                     while (m3ul[m3ul.i + 1]) {
                         m3ul.i++;
