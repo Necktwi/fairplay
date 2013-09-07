@@ -55,6 +55,9 @@ window.ferryplayer = {
             var m3u8version;
             var allowCache;
             var mediaSequence;
+            var wholePlayedLength = 0;
+            var firstPlayedSegmentIndex = 0;
+            var playSegmentStartTime = 0;
             segments.currentsegmentindex = -1;
             fvideo.addEventListener("resize", function() {
                 resizeControls();
@@ -155,6 +158,7 @@ window.ferryplayer = {
                         };
                         video.onplayend = function() {
                             state = "halted";
+                            wholePlayedLength += this.duration - playSegmentStartTime;
                             playSegment("ended");
                             setTimeout(processNextSegment, 0);
                         };
@@ -193,6 +197,7 @@ window.ferryplayer = {
             };
             var playNextSegment = function() {
                 if (segments[segments.currentsegmentindex + 1]) {
+                    playSegmentStartTime = 0;
                     segments[++segments.currentsegmentindex].play();
                     drawplayer(segments[segments.currentsegmentindex]);
                     state = "playing";
@@ -210,7 +215,7 @@ window.ferryplayer = {
                 that.gauge.buffer.fill.style.width = parseInt(fillFraction * (that.gauge.width - 2)) + "px";
             };
             var updatePlayProgress = function() {
-                fillFraction = ((segments[segments.currentsegmentindex].currentTime + segments.currentsegmentindex * maxSegmentLength) / totalDuration);
+                fillFraction = ((segments[segments.currentsegmentindex].currentTime + wholePlayedLength) / totalDuration);
                 that.gauge.buffer.fill.style.width = parseInt(fillFraction * (that.gauge.width - 2)) + "px";
                 if (fillFraction >= 1) {
                     stopTrackingPlayProgress();
