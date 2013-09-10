@@ -24,25 +24,51 @@ window.ferryplayer = {
     players: [],
     player: function(fvcontainer, src, m3u, buffersize) {
         if (this instanceof arguments.callee) {
+            var that = this;
             var fvideo = document.createElement("div");
             fvcontainer.insertAdjacentElement("afterBegin", fvideo);
             fvideo.classList.add("container");
             this.controls = document.createElement("div");
             this.controls.classList.add("controls");
             this.controls.gauge = this.gauge = document.createElement("div");
-            this.gauge.classList.add("gauge");
-            this.gauge.buffer = document.createElement("div");
-            this.gauge.insertAdjacentElement("afterBegin", this.gauge.buffer);
-            this.gauge.buffer.classList.add("buffer");
-            this.gauge.buffer.fill = this.gauge.buffer.insertAdjacentElement("afterBegin", document.createElement("div"));
-            this.gauge.buffer.fill.classList.add("fill");
+            this.controls.gauge.classList.add("gauge");
+            this.gauge.width = 0;
+            this.controls.gauge.buffers = [];
+            var pause;
+            var play;
+            var seekPosition = function() {
+                event.cancelBubble = true;
+                pause();
+                segments[segments.currentsegmentindex].currentTime = 0;
+                segments.currentsegmentindex = this.index;
+                playSegment("seek", segments[this.index], parseInt((event.offsetX / this.offsetWidth) * playlist[this.index].duration));
+            };
+            function createBuf() {
+                var buf = document.createElement("div");
+                if (that.gauge.buffers.length > 0) {
+                    that.gauge.buffers[that.gauge.buffers.length - 1].insertAdjacentElement("afterEnd", buf);
+                } else {
+                    that.gauge.insertAdjacentElement("afterBegin", buf);
+                }
+                buf.classList.add("buffer");
+                buf.index = that.gauge.buffers.length;
+                buf.fill = buf.insertAdjacentElement("afterBegin", document.createElement("div"));
+                buf.fill.classList.add("fill");
+                that.gauge.buffers.push(buf);
+                buf.addEventListener("mousedown", seekPosition, false);
+            }
+            this.gauge.slider = document.createElement("div");
+            this.gauge.slider.classList.add("slider");
+            this.gauge.insertAdjacentElement("beforeEnd", this.gauge.slider);
+            this.gauge.markFace = document.createElement("div");
+            this.gauge.markFace.classList.add("markFace");
+            this.gauge.insertAdjacentElement("beforeEnd", this.gauge.markFace);
             fvideo.insertAdjacentElement("beforeEnd", this.controls);
             this.controls.insertAdjacentElement("beforeEnd", this.gauge);
             (this.info = document.createElement("div")).classList.add("info");
             fvideo.insertAdjacentElement("beforeEnd", this.info);
             var bufferedLength = 0;
             var bufferedFraction = 0;
-            var that = this;
             var m3ul;
             var maxSegmentLength;
             var segments = [];
@@ -58,17 +84,37 @@ window.ferryplayer = {
             var wholePlayedLength = 0;
             var firstPlayedSegmentIndex = 0;
             var playSegmentStartTime = 0;
+            var lastXSegmentSize;
+            var lastYSegmentSize;
             segments.currentsegmentindex = -1;
+
+            this.gauge.addEventListener("mouseover", function() {
+                var x = event.pageX - that.controls.gauge.offsetLeft - 8;
+                var mark = parseInt((x / that.controls.gauge.width) * totalDuration);
+                that.controls.gauge.markFace.style.left = x + "px";
+                that.gauge.markFace.classList.add("visible");
+                that.gauge.markFace.textContent = parseInt(mark / 60) + ":" + (mark % 60);
+            }, false);
+
+            this.gauge.addEventListener("mouseout", function() {
+                that.gauge.markFace.classList.remove("visible");
+            }, false);
+
+
             fvideo.addEventListener("resize", function() {
                 resizeControls();
             }, false);
-            fvideo.addEventListener("mouseout", function() {
-                hideControls();
-            });
-            fvideo.addEventListener("mouseover", function() {
-                showControls();
-            });
-            fvideo.addEventListener("click", function() {
+            if (fvcontainer.getAttribute("data-controls") !== "show") {
+                fvideo.addEventListener("mouseout", function() {
+                    hideControls();
+                });
+                fvideo.addEventListener("mouseover", function() {
+                    showControls();
+                });
+            } else {
+                that.controls.classList.add("visible");
+            }
+            fvideo.addEventListener("mousedown", function() {
                 pauseplay();
             });
             var validURI = function(uri) {
@@ -93,6 +139,7 @@ window.ferryplayer = {
                                             throw "segment length exceeded max segment length";
                                         }
                                         totalDuration += play.duration;
+                                        play.tillDuration = totalDuration;
                                         play.tags.push(t);
                                     }
                                 }
@@ -130,27 +177,35 @@ window.ferryplayer = {
                 if (segments.length < playlist.length) {
                     if (segments.length - (segments.currentsegmentindex + 1) < buffersize) {
                         var video = document.createElement("video");
+                        video.index = segments.length;
                         segments.push(video);
+                        createBuf();
                         video.player = that;
                         video.classList.add("ferrymediasegment");
                         video.onloadprogress = function() {
                             this.bufferwatch = function() {
-                                if (parseInt(video.buffered.end(0).toFixed(6) / video.duration) === 1) {
-                                    delete video.bufferwatch;
-                                    clearInterval(video.bufferwatcher);
-                                    delete video.bufferwatcher;
-                                    delete video.onloadprogress;
-                                    setTimeout(function() {
-                                        playSegment("loaded", video);
-                                    }, 0);
-                                    setTimeout(processNextSegment, 0);
-                                    bufferedLength += playlist[arguments.callee.i].duration;
-                                    bufferedFraction = bufferedLength / totalDuration;
-                                    if (!playProgressInterval) {
-                                        trackPlayProgress();
-                                    } else {
-                                        resizeControls();
+                                try {
+                                    if (parseInt(video.buffered.end(0).toFixed(6) / video.duration) === 1) {
+                                        delete video.bufferwatch;
+                                        clearInterval(video.bufferwatcher);
+                                        delete video.bufferwatcher;
+                                        delete video.onloadprogress;
+                                        setTimeout(function() {
+                                            playSegment("loaded", video);
+                                        }, 0);
+                                        setTimeout(processNextSegment, 0);
+                                        bufferedLength += playlist[arguments.callee.i].duration;
+                                        that.gauge.buffers[arguments.callee.i].totalDuration = bufferedLength;
+                                        that.gauge.buffers[arguments.callee.i].duration = playlist[arguments.callee.i].duration;
+                                        bufferedFraction = bufferedLength / totalDuration;
+                                        if (!playProgressInterval) {
+                                            trackPlayProgress();
+                                        } else {
+                                            that.gauge.buffers[arguments.callee.i].style.width = (parseInt((playlist[arguments.callee.i].tillDuration / totalDuration) * (that.gauge.width - 2)) - that.gauge.buffers[arguments.callee.i].offsetLeft) + "px";
+                                        }
                                     }
+                                } catch (e) {
+                                    //console.log(e);
                                 }
                             };
                             this.bufferwatch.i = segments.length - 1;
@@ -159,6 +214,7 @@ window.ferryplayer = {
                         video.onplayend = function() {
                             state = "halted";
                             wholePlayedLength += this.duration - playSegmentStartTime;
+                            updatePlayProgress();
                             playSegment("ended");
                             setTimeout(processNextSegment, 0);
                         };
@@ -182,7 +238,7 @@ window.ferryplayer = {
                 that.info.innerText = video.info;
                 resizeControls();
             };
-            var playSegment = function(event, position) {
+            var playSegment = function(event, segment, position) {
                 if (event === "loaded") {
                     if (segments.currentsegmentindex === -1) {
                         playSegment("ended");
@@ -193,13 +249,19 @@ window.ferryplayer = {
                     playNextSegment();
                 } else if (event === "resume" && state === "paused") {
                     segments[segments.currentsegmentindex].play();
+                } else if (event === "seek") {
+                    segment.currentTime = position;
+                    setInterval(processNextSegment, 0);
+                    drawplayer(segments[segments.currentsegmentindex]);
+                    play();
+                    state = "playing";
                 }
             };
             var playNextSegment = function() {
                 if (segments[segments.currentsegmentindex + 1]) {
                     playSegmentStartTime = 0;
-                    segments[++segments.currentsegmentindex].play();
-                    drawplayer(segments[segments.currentsegmentindex]);
+                    drawplayer(segments[++segments.currentsegmentindex]);
+                    segments[segments.currentsegmentindex].play();
                     state = "playing";
                 }
             };
@@ -210,15 +272,29 @@ window.ferryplayer = {
                 that.controls.classList.remove("visible");
             };
             var resizeControls = function() {
-                that.gauge.style.width = (that.gauge.width = fvideo.offsetWidth) + "px";
-                that.gauge.buffer.style.width = parseInt(bufferedFraction * (that.gauge.width - 2)) + "px";
-                that.gauge.buffer.fill.style.width = parseInt(fillFraction * (that.gauge.width - 2)) + "px";
+                if (fvideo.offsetWidth !== that.gauge.width) {
+                    that.gauge.style.width = (lastXSegmentSize = that.gauge.width = fvideo.offsetWidth) + "px";
+                    var i = 0;
+                    while (that.gauge.buffers[i]) {
+                        //that.gauge.buffers[i].style.left=that.gauge.buffers[i-1]?(that.gauge.buffers[i-1].offsetLeft+that.gauge.buffers[i-1].offsetWidth);
+                        that.gauge.buffers[i].style.width = (parseInt((playlist[i].tillDuration / totalDuration) * (that.gauge.width - 2)) - that.gauge.buffers[i].offsetLeft) + "px";
+                        i++;
+                    }
+                }
             };
             var updatePlayProgress = function() {
-                fillFraction = ((segments[segments.currentsegmentindex].currentTime + wholePlayedLength) / totalDuration);
-                that.gauge.buffer.fill.style.width = parseInt(fillFraction * (that.gauge.width - 2)) + "px";
+                fillFraction = (segments[segments.currentsegmentindex].currentTime / segments[segments.currentsegmentindex].duration);
                 if (fillFraction >= 1) {
-                    stopTrackingPlayProgress();
+                    that.gauge.buffers[segments.currentsegmentindex].fill.style.width = (that.gauge.buffers[segments.currentsegmentindex].offsetWidth) + "px";
+                    if (segments.currentsegmentindex === playlist.length - 1) {
+                        stopTrackingPlayProgress();
+                    }
+                } else {
+                    var augmentedLength = parseInt(fillFraction * that.gauge.buffers[segments.currentsegmentindex].offsetWidth);
+                    if (that.gauge.buffers[segments.currentsegmentindex].fill.offsetWidth < augmentedLength) {
+                        that.gauge.buffers[segments.currentsegmentindex].fill.style.width = augmentedLength + "px";
+                    }
+                    that.gauge.slider.style.left = that.gauge.buffers[segments.currentsegmentindex].offsetLeft + augmentedLength + "px";
                 }
             };
             var pauseplay = function() {
@@ -234,6 +310,15 @@ window.ferryplayer = {
                     trackPlayProgress();
                 }
             };
+            pause = function() {
+                segments[segments.currentsegmentindex].pause();
+                stopTrackingPlayProgress();
+            };
+            play = function() {
+                segments[segments.currentsegmentindex].play();
+                trackPlayProgress();
+            };
+
             function trackPlayProgress() {
                 playProgressInterval = setInterval(updatePlayProgress, 330);
             }
