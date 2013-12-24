@@ -1,0 +1,22 @@
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+<!DOCTYPE html>
+<html>
+    <head>
+        <title></title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+    <body>
+        <div>A true motion picture :)</div>
+        <img id="ferrypicture" src="/Videos/motionpicture2.jpg" data-framerate="3">
+        <script type="text/javascript">
+            function projector() {
+                ferrypicture.src = ferrypicture.src;
+                setTimeout(projector, 1000 / ferrypicture.getAttribute("data-framerate"));
+            }
+            setTimeout(projector, 1000 / ferrypicture.getAttribute("data-framerate"));
+        </script>
+    </body>
+</html>

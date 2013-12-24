@@ -1,0 +1,25 @@
+{"ts":1379078825837,"silentsave":true,"restoring":false,"patch":[[]],"length":0}
+{"contributors":[],"silentsave":false,"ts":1379078975527,"patch":[[{"diffs":[[1,"var fs = require('fs');\nvar base64_data = fs.readFileSync('Sounds/mysong.mp3').toString('base64');\nconsole.log(base64_data);"]],"start1":0,"start2":0,"length1":0,"length2":124}]],"length":124,"saved":false}
+{"ts":1379079470628,"patch":[[{"diffs":[[0,"');\n"],[-1,"console.log(base64_data);"],[1,"fs.writeFile(\"Sounds/mysong_base64.txt\", base64_data, function(err) {\n    if(err) {\n        console.log(err);\n    } else {\n        console.log(\"The file was saved!\");\n    }\n}); "]],"start1":95,"start2":95,"length1":29,"length2":181}]],"length":276,"saved":false}
+{"contributors":[],"silentsave":true,"ts":1379259966089,"patch":[[{"diffs":[[0,"eFile(\"S"],[-1,"ounds"],[0,"/mysong_"]],"start1":106,"start2":106,"length1":21,"length2":16}]],"length":271,"saved":false}
+{"ts":1379259966808,"patch":[[{"diffs":[[0,"teFile(\""],[-1,"S"],[0,"/mysong_"]],"start1":105,"start2":105,"length1":17,"length2":16}]],"length":270,"saved":false}
+{"ts":1379259969700,"patch":[[{"diffs":[[0,"teFile(\""],[1,"Videos"],[0,"/mysong_"]],"start1":105,"start2":105,"length1":16,"length2":22}]],"length":276,"saved":false}
+{"ts":1379259984915,"patch":[[{"diffs":[[0,"le(\""],[-1,"Videos"],[0,"/mys"]],"start1":109,"start2":109,"length1":14,"length2":8}]],"length":270,"saved":false}
+{"ts":1379259988784,"patch":[[{"diffs":[[0,"teFile(\""],[1,"Pi"],[0,"/mysong_"]],"start1":105,"start2":105,"length1":16,"length2":18}]],"length":272,"saved":false}
+{"ts":1379259989883,"patch":[[{"diffs":[[0,"File(\"Pi"],[1,"ct"],[0,"/mysong_"]],"start1":107,"start2":107,"length1":16,"length2":18}]],"length":274,"saved":false}
+{"ts":1379259991742,"patch":[[{"diffs":[[0,"le(\"Pict"],[1,"ures"],[0,"/mysong_"]],"start1":109,"start2":109,"length1":16,"length2":20}]],"length":278,"saved":false}
+{"ts":1379260026388,"patch":[[{"diffs":[[0,"tures/my"],[-1,"song"],[0,"_base64."]],"start1":116,"start2":116,"length1":20,"length2":16}]],"length":274,"saved":false}
+{"ts":1379260027775,"patch":[[{"diffs":[[0,"tures/my"],[1,"pic"],[0,"_base64."]],"start1":116,"start2":116,"length1":16,"length2":19}]],"length":277,"saved":false}
+{"ts":1379260033323,"patch":[[{"diffs":[[0,"nc('"],[-1,"Sounds"],[0,"/mys"]],"start1":55,"start2":55,"length1":14,"length2":8}]],"length":271,"saved":false}
+{"ts":1379260035781,"patch":[[{"diffs":[[0,"leSync('"],[1,"Videos"],[0,"/mysong."]],"start1":51,"start2":51,"length1":16,"length2":22}]],"length":277,"saved":false}
+{"ts":1379260040641,"patch":[[{"diffs":[[0,"os/myson"],[-1,"g"],[0,".mp3').t"]],"start1":63,"start2":63,"length1":17,"length2":16}]],"length":276,"saved":false}
+{"ts":1379260042289,"patch":[[{"diffs":[[0,"s/my"],[-1,"son"],[0,".mp3"]],"start1":64,"start2":64,"length1":11,"length2":8}]],"length":273,"saved":false}
+{"ts":1379260045174,"patch":[[{"diffs":[[0,"eos/"],[-1,"my.mp3"],[0,"').t"]],"start1":62,"start2":62,"length1":14,"length2":8}]],"length":267,"saved":false}
+{"ts":1379260057723,"patch":[[{"diffs":[[0,"'Videos/"],[1,"motion"],[0,"').toStr"]],"start1":58,"start2":58,"length1":16,"length2":22}]],"length":273,"saved":false}
+{"ts":1379260059873,"patch":[[{"diffs":[[0,"s/motion"],[1,"picture"],[0,"').toStr"]],"start1":64,"start2":64,"length1":16,"length2":23}]],"length":280,"saved":false}
+{"ts":1379260061497,"patch":[[{"diffs":[[0,"npicture"],[1,"/"],[0,"').toStr"]],"start1":71,"start2":71,"length1":16,"length2":17}]],"length":281,"saved":false}
+{"ts":1379260086557,"patch":[[{"diffs":[[0,"picture/"],[1,"motion"],[0,"').toStr"]],"start1":72,"start2":72,"length1":16,"length2":22}]],"length":287,"saved":false}
+{"ts":1379260089083,"patch":[[{"diffs":[[0,"e/motion"],[1,"picture"],[0,"').toStr"]],"start1":78,"start2":78,"length1":16,"length2":23}]],"length":294,"saved":false}
+{"ts":1379260091594,"patch":[[{"diffs":[[0,"npicture"],[1,"-35"],[0,"').toStr"]],"start1":85,"start2":85,"length1":16,"length2":19}]],"length":297,"saved":false}
+{"ts":1379260092538,"patch":[[{"diffs":[[0,"cture-35"],[1,".j"],[0,"').toStr"]],"start1":88,"start2":88,"length1":16,"length2":18}]],"length":299,"saved":false}
+{"ts":1379260093837,"patch":[[{"diffs":[[0,"ure-35.j"],[1,"pg"],[0,"').toStr"]],"start1":90,"start2":90,"length1":16,"length2":18}]],"length":301,"saved":false}

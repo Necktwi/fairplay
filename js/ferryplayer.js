@@ -8,21 +8,49 @@ window.ferryplayer = {
         var ferryvideos = document.getElementsByClassName("ferryvideo");
         var ferry;
         var launchpad;
+        var launchpadURL;
         var src;
         var fvideo;
         for (var i = 0; i < ferryvideos.length; i++) {
             fvideo = ferryvideos[i];
             src = fvideo.getAttribute("data-src");
-            launchpad = new ferrytools.launchpad(src, "", function() {
-                var player = new ferryplayer.player(fvideo, this.url, this.ferry.responseText, 2);
+            var path;
+            if (src.search("fmwsp://") == 0) {
+                var port="";
+                var pathIndex=-1;
+                var portIndex=-1;
+                if ((pathIndex = src.indexOf("/", 8)) > 0) {
+                    path = src.substring(pathIndex, src.length)
+                }
+                if ((portIndex = src.indexOf(":", 8)) > 0 && ((pathIndex > 0) === (portIndex < pathIndex))) {
+                    port = src.substring(portIndex + 1, (pathIndex > 0 ? pathIndex : src.length));
+                }
+                port = port.length > 0 ? port : "17291";
+                var dn = src.substring(8, portIndex > 0 ? portIndex : (pathIndex > 0 ? pathIndex : src.length));
+                launchpadURL = "ws://" + dn + ":" + port;
+            } else {
+                launchpadURL = src;
+            }
+            launchpad = new ferrytools.launchpad(launchpadURL, "", function() {
+                var player = new ferryplayer.player(fvideo, this.mediaSRC, this.ferry.responseText, 2);
                 ferryplayer.players.push(player);
-                player.processm3u();
+                player.path = path;
+                player.launchpad = this;
+                player.processSRC();
             });
+            launchpad.mediaSRC = src;
+            launchpad.path = path;
+            launchpad.oncrash=function(){
+                console.log("an error occured");
+            };
+            launchpad.onclose=function(){
+                console.log("unable to connecto to server");
+            }
             ferry = new ferrytools.ferry(launchpad);
         }
     },
     players: [],
-    player: function(fvcontainer, src, m3u, buffersize) {
+    player: function(fvcontainer, src, initParams, buffersize) {
         if (this instanceof arguments.callee) {
             var that = this;
             var fvideo = document.createElement("div");
@@ -56,6 +84,7 @@ window.ferryplayer = {
                 buf.fill.classList.add("fill");
                 that.gauge.buffers.push(buf);
                 buf.addEventListener("mousedown", seekPosition, false);
+                return buf;
             }
             this.gauge.slider = document.createElement("div");
             this.gauge.slider.classList.add("slider");
@@ -120,57 +149,75 @@ window.ferryplayer = {
             var validURI = function(uri) {
                 return true;
             };
-            this.processm3u = function() {
-                m3ul = m3u.split("\n");
-                m3ul.i = -1;
-                m3ul.tags = [];
-                m3ul.i++;
-                if (m3ul[m3ul.i] === "#EXTM3U") {
-                    while (m3ul[m3ul.i + 1]) {
-                        m3ul.i++;
-                        if (m3ul[m3ul.i] !== "") {
-                            if (m3ul[m3ul.i][0] !== "#") {
-                                var play = {tags: [], URI: ""};
-                                for (var i = 0; i < m3ul.tags.length; i++) {
-                                    if (m3ul.tags[i] && m3ul.tags[i].slice(0, 7) === "#EXTINF") {
-                                        var t = m3ul.tags.splice(i, 1)[0];
-                                        i--;
-                                        if ((play.duration = parseFloat(t.slice(8, t.indexOf(",")))) > maxSegmentLength) {
-                                            throw "segment length exceeded max segment length";
+            this.processSRC = function() {
+                if (src.search("fmwsp://") === 0) {
+                    var processPacket = function(msg) {
+                        createBuf();
+                    };
+                    this.launchpad.ferry.__proto__.onmessage = function(e) {
+                        var msg=JSON.parse(e.data);
+                        if(msg.error){
+                            if(msg.error.search("end of stream")===0){
+                                
+                            }else if(msg.error.search("")===0){
+                                
+                            }
+                        }
+                        processPacket(msg);
+                    }
+                    this.launchpad.ferry.__proto__.send("{path:\"" + this.path + "\"}");
+                } else {
+                    m3ul = initParams.split("\n");
+                    m3ul.i = -1;
+                    m3ul.tags = [];
+                    m3ul.i++;
+                    if (m3ul[m3ul.i] === "#EXTM3U") {
+                        while (m3ul[m3ul.i + 1]) {
+                            m3ul.i++;
+                            if (m3ul[m3ul.i] !== "") {
+                                if (m3ul[m3ul.i][0] !== "#") {
+                                    var play = {tags: [], URI: ""};
+                                    for (var i = 0; i < m3ul.tags.length; i++) {
+                                        if (m3ul.tags[i] && m3ul.tags[i].slice(0, 7) === "#EXTINF") {
+                                            var t = m3ul.tags.splice(i, 1)[0];
+                                            i--;
+                                            if ((play.duration = parseFloat(t.slice(8, t.indexOf(",")))) > maxSegmentLength) {
+                                                throw "segment length exceeded max segment length";
+                                            }
+                                            totalDuration += play.duration;
+                                            play.tillDuration = totalDuration;
+                                            play.tags.push(t);
                                         }
-                                        totalDuration += play.duration;
-                                        play.tillDuration = totalDuration;
-                                        play.tags.push(t);
                                     }
-                                }
-                                if (validURI(m3ul[m3ul.i])) {
-                                    play.URI = m3ul[m3ul.i];
-                                    playlist.push(play);
-                                }
-                            } else {
-                                if (m3ul[m3ul.i].slice(0, 4) === "#EXT") {
-                                    if (m3ul[m3ul.i].slice(0, 21) === "#EXT-X-TARGETDURATION") {
-                                        maxSegmentLength = parseFloat(m3ul[m3ul.i].slice(22));
-                                    } else if (m3ul[m3ul.i].slice(0, 21) === "#EXT-X-MEDIA-SEQUENCE") {
-                                        mediaSequence = parseFloat(m3ul[m3ul.i].slice(22));
-                                    } else if (m3ul[m3ul.i].slice(0, 14) === "#EXT-X-VERSION") {
-                                        m3u8version = parseFloat(m3ul[m3ul.i].slice(15));
-                                    } else if (m3ul[m3ul.i].slice(0, 18) === "#EXT-X-ALLOW-CACHE") {
-                                        allowCache = m3ul[m3ul.i].slice(19).toLowerCase() === "yes";
-                                    } else if (m3ul[m3ul.i] === "#EXT-X-ENDLIST") {
-                                        break;
-                                    } else {
-                                        m3ul.tags.push(m3ul[m3ul.i]);
+                                    if (validURI(m3ul[m3ul.i])) {
+                                        play.URI = m3ul[m3ul.i];
+                                        playlist.push(play);
                                     }
                                 } else {
-                                    throw "Invalid extended m3u";
+                                    if (m3ul[m3ul.i].slice(0, 4) === "#EXT") {
+                                        if (m3ul[m3ul.i].slice(0, 21) === "#EXT-X-TARGETDURATION") {
+                                            maxSegmentLength = parseFloat(m3ul[m3ul.i].slice(22));
+                                        } else if (m3ul[m3ul.i].slice(0, 21) === "#EXT-X-MEDIA-SEQUENCE") {
+                                            mediaSequence = parseFloat(m3ul[m3ul.i].slice(22));
+                                        } else if (m3ul[m3ul.i].slice(0, 14) === "#EXT-X-VERSION") {
+                                            m3u8version = parseFloat(m3ul[m3ul.i].slice(15));
+                                        } else if (m3ul[m3ul.i].slice(0, 18) === "#EXT-X-ALLOW-CACHE") {
+                                            allowCache = m3ul[m3ul.i].slice(19).toLowerCase() === "yes";
+                                        } else if (m3ul[m3ul.i] === "#EXT-X-ENDLIST") {
+                                            break;
+                                        } else {
+                                            m3ul.tags.push(m3ul[m3ul.i]);
+                                        }
+                                    } else {
+                                        throw "Invalid extended m3u";
+                                    }
                                 }
                             }
                         }
+                        setTimeout(processNextSegment, 0);
+                    } else {
+                        throw "Invalid extended m3u";
                     }
-                    setTimeout(processNextSegment, 0);
-                } else {
-                    throw "Invalid extended m3u";
                 }
             };
             var processNextSegment = function() {
@@ -325,6 +372,16 @@ window.ferryplayer = {
             function stopTrackingPlayProgress() {
                 clearInterval(playProgressInterval);
             }
+            function framio(packet){
+                if (this instanceof arguments.callee) {
+                    this.duration=packet.duration;
+                    this.realTime=packet.time;
+                    this.frames=packet.ferryframes;
+                    this.currentTime=0;
+                }else{
+                    throw 'framio object constructor cannot be called as a function';
+                }
+            };
         } else {
             throw "player object constructor cannot be called as a function";
         }

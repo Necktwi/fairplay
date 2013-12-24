@@ -1,0 +1,3 @@
+{"ts":1379090720886,"silentsave":true,"restoring":false,"patch":[[{"diffs":[[1,"var WebSocket = require('ws'),\n    ws = new WebSocket('ws://localhost');\nws.on('open', function() {\n    ws.send('something');\n});\nws.on('message', function(message) {\n    console.log('received: %s', message);\n});\n"]],"start1":0,"start2":0,"length1":0,"length2":213}]],"length":213}
+{"contributors":[],"silentsave":true,"ts":1379090762491,"patch":[[{"diffs":[[0,"ocalhost"],[1,":"],[0,"');\nws.o"]],"start1":61,"start2":61,"length1":16,"length2":17}]],"length":214,"saved":false}
+{"ts":1379090764130,"patch":[[{"diffs":[[0,"calhost:"],[1,"8080"],[0,"');\nws.o"]],"start1":62,"start2":62,"length1":16,"length2":20}]],"length":218,"saved":false}
