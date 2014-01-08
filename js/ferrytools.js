@@ -29,7 +29,7 @@ window.ferrytools = {
             this.response = "";
             this.launch = function() {
                 delete this.ferry;
-                this.ferry = ferrytools.ferry(this);
+                this.ferry = new ferrytools.ferry(this);
             }
         } else {
             throw 'launchpad object constructor cannot be called as a function';
@@ -41,7 +41,7 @@ window.ferrytools = {
                 launchpad.async = true;
             }
             this.launchpad = launchpad;
-            if (launchpad.url.search("ws://") === 0) {
+            if (launchpad.url.search("ws://") === 0 || launchpad.url.search("wss://") === 0) {
                 var port;
                 var path;
                 var pathIndex;
@@ -58,7 +58,10 @@ window.ferrytools = {
                 var dn = launchpad.url.substring(5, portIndex > 0 ? portIndex : (pathIndex > 0 ? pathIndex : launchpad.url.length));
                 launchpad.ferry = this;
                 this.responseText = "";
-                this.__proto__ = new WebSocket("ws://" + dn + ":" + port);
+                if (!launchpad.protocol) {
+                    launchpad.protocol = "default";
+                }
+                this.__proto__ = new WebSocket("ws://" + dn + ":" + port, launchpad.protocol);
                 //this.onclose;
                 var onopenFired = false;
                 this.__proto__.onopen = function() {

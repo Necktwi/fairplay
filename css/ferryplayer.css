@@ -20,6 +20,7 @@ root {
 .ferryvideo .controls{
     position: absolute;
     display: none;
+    bottom: 0px;
 }
 
 .ferryvideo .controls.visible{
