@@ -3,11 +3,30 @@
     <head>
         <meta charset="UTF-8"/>
         <link rel="stylesheet" href="css/ferryplayer.css" type="text/css">
+        <script src="/js/standardizeWeb.js"></script>
         <script src="/js/ferrytools.js"></script>
         <script src="/js/ferryplayer.js"></script>
         <!--script src="/js/gameoflife.js"></script-->
         <script type="text/javascript">
             function init() {
+                var d = document.createElement("div");
+                if (!Element.prototype.insertAdjacentElement) {
+                    Element.prototype.insertAdjacentElement = function(position, element) {
+                        if (element.__proto__.__proto__.__proto__ === d.__proto__.__proto__.__proto__) {
+                            if (position === "beforeBegin") {
+                                this.parentNode.insertBefore(element, this);
+                            } else if (position === "afterBegin") {
+                                this.insertBefore(element, this.childNodes[0]);
+                            } else if (position === "beforeEnd") {
+                                this.appendChild(element);
+                            } else if (position === "afterEnd") {
+                                this.parentNode.insertBefore(element, this.nextSibling);
+                            }
+                        } else {
+                            throw "Illegal element";
+                        }
+                    }
+                }
                 ferryplayer.init();
                 //setup(); //gameoflife
             }

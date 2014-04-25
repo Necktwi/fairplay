@@ -71,7 +71,7 @@ window.ferryplayer = {
             var live;
             var onendedevt = document.createEvent("Event");
             var startBuffer = 0;
-            var bufferSize = 10;
+            var bufferSize = 30;
             onendedevt.initEvent("ended", true, true);
             var frameoverevt = document.createEvent("Event");
             frameoverevt.initEvent("frameover", true, true);
@@ -101,7 +101,8 @@ window.ferryplayer = {
                 }
                 buf.classList.add("buffer");
                 buf.index = that.gauge.buffers.length;
-                buf.fill = buf.insertAdjacentElement("afterBegin", document.createElement("div"));
+                buf.fill = document.createElement("div");
+                buf.insertAdjacentElement("afterBegin", buf.fill);
                 buf.fill.classList.add("fill");
                 that.gauge.buffers.push(buf);
                 buf.addEventListener("mousedown", seekPosition, false);
@@ -123,7 +124,7 @@ window.ferryplayer = {
             var maxSegmentLength;
             var segments = [];
             var path = src.slice(0, src.lastIndexOf('/') + 1);
-            var state = "halted";
+            var state = "seeknext";
             var playlist = [];
             var totalDuration = 0;
             var playProgressInterval;
@@ -195,7 +196,7 @@ window.ferryplayer = {
                                 buf.duration = video.duration;
                             }
                             video.onplayend = function() {
-                                state = "halted";
+                                state = "seeknext";
                                 wholePlayedLength += this.duration - playSegmentStartTime;
                                 updatePlayProgress();
                                 playSegment("ended");
@@ -338,7 +339,7 @@ window.ferryplayer = {
                             this.bufferwatcher = setInterval(this.bufferwatch, 100);
                         };
                         video.onplayend = function() {
-                            state = "halted";
+                            state = "seeknext";
                             wholePlayedLength += this.duration - playSegmentStartTime;
                             updatePlayProgress();
                             playSegment("ended");
@@ -404,6 +405,8 @@ window.ferryplayer = {
                     segments[segments.currentsegmentindex].play();
                     drawplayer(segments[segments.currentsegmentindex]);
                     state = "playing";
+                } else {
+                    state = "halted";
                 }
             };
             var showControls = function() {
@@ -414,7 +417,7 @@ window.ferryplayer = {
             };
             var bufferCount = 0;
             var resizeControls = function() {
-                if (fvideo.offsetWidth !== that.controls.width || bufferCount !== that.segments.length) {
+                if (fvideo.offsetWidth !== that.controls.width || bufferCount !== segments.length) {
                     that.gauge.style.width = (lastXSegmentSize = that.gauge.width = fvideo.offsetWidth) + "px";
                     var i = startBuffer;
                     var st = playlist[startBuffer].tillDuration - playlist[startBuffer].duration;
@@ -424,7 +427,7 @@ window.ferryplayer = {
                         i++;
                     }
                 }
-                bufferCount = that.segments.length;
+                bufferCount = segments.length;
             };
             var updatePlayProgress = function() {
                 fillFraction = (segments[segments.currentsegmentindex].currentTime / segments[segments.currentsegmentindex].duration);
@@ -482,6 +485,10 @@ window.ferryplayer = {
             }
             function newFramio(packet) {
                 var elm = document.createElement("img");
+                elm.audio = document.createElement("audio");
+                elm.audio.style.display = "none";
+                elm.audio.src = "data:audio/mp3;base64," + packet.ferrymp3;
+                fvideo.insertAdjacentElement("afterBegin", elm.audio);
                 elm.classList.add("ferrymediasegment");
                 elm.duration = packet.duration;
                 elm.realTime = packet.time;
@@ -516,6 +523,12 @@ window.ferryplayer = {
                 elm.play = function() {
                     if (this.paused) {
                         this.paused = false;
+                        try {
+                            //this.audio.currentTime = this.currentTime;
+                        } catch (e) {
+
+                        }
+                        this.audio.play();
                         this.currentTime %= this.frameDuration;
                         this.currentFrameIndex = parseInt(this.currentTime / this.frameDuration) - 1;
                         setTimeout(function(e) {
@@ -525,6 +538,7 @@ window.ferryplayer = {
                 }
                 elm.pause = function() {
                     this.paused = true;
+                    this.audio.pause();
                 }
                 elm.played = {
                     start: function(index) {
