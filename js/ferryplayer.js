@@ -174,6 +174,13 @@ window.ferryplayer = {
             this.processSRC = function() {
                 if (src.search("fmwsp://") === 0) {
                     var lastpackindex = -1;
+                    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (window.AudioContext) {
+                        this.nonsegmented = true;
+                        this.audioContext = new window.AudioContext();
+                        this.audioBuffer;
+                        this.audioSegmentCount = 0;
+                    }
                     var processPacket = function(pck) {
                         if (pck.index !== lastpackindex) {
                             lastpackindex = pck.index;
@@ -488,6 +495,15 @@ window.ferryplayer = {
                 elm.audio = document.createElement("audio");
                 elm.audio.style.display = "none";
                 elm.audio.src = "data:audio/mp3;base64," + packet.ferrymp3;
+                var audioContext = this.audioContext;
+                this.audioContext.decodeAudioData(packet.ferrymp3, function(buf) {
+                    var audioSource = audioContext.createBufferSource();
+                    audioSource.buffer = buf;
+                    audioSource.connect(audioContext.destination);
+                    audioSource.start(0);
+                }, function() {
+
+                });
                 fvideo.insertAdjacentElement("afterBegin", elm.audio);
                 elm.classList.add("ferrymediasegment");
                 elm.duration = packet.duration;
