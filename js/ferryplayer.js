@@ -171,13 +171,14 @@ window.ferryplayer = {
             var validURI = function(uri) {
                 return true;
             };
+            var audioContext;
             this.processSRC = function() {
                 if (src.search("fmwsp://") === 0) {
                     var lastpackindex = -1;
                     window.AudioContext = window.AudioContext || window.webkitAudioContext;
                     if (window.AudioContext) {
                         this.nonsegmented = true;
-                        this.audioContext = new window.AudioContext();
+                        audioContext = this.audioContext = new window.AudioContext();
                         this.audioBuffer;
                         this.audioSegmentCount = 0;
                     }
@@ -492,19 +493,17 @@ window.ferryplayer = {
             }
             function newFramio(packet) {
                 var elm = document.createElement("img");
-                elm.audio = document.createElement("audio");
-                elm.audio.style.display = "none";
-                elm.audio.src = "data:audio/mp3;base64," + packet.ferrymp3;
-                var audioContext = this.audioContext;
-                this.audioContext.decodeAudioData(packet.ferrymp3, function(buf) {
-                    var audioSource = audioContext.createBufferSource();
-                    audioSource.buffer = buf;
-                    audioSource.connect(audioContext.destination);
-                    audioSource.start(0);
+                /**
+                 * audio buffer source
+                 * @public
+                 */
+                elm.audioSource = audioContext.createBufferSource();
+                audioContext.decodeAudioData(atob(packet.ferrymp3), function(buffer) {
+                    elm.audioSource.buffer = buffer;
+                    elm.audioSource.connect(audioContext.destination);
                 }, function() {
-
+                    console.log("error decoding audio");
                 });
-                fvideo.insertAdjacentElement("afterBegin", elm.audio);
                 elm.classList.add("ferrymediasegment");
                 elm.duration = packet.duration;
                 elm.realTime = packet.time;
@@ -544,7 +543,7 @@ window.ferryplayer = {
                         } catch (e) {
 
                         }
-                        this.audio.play();
+                        this.audioSource.start(0, this.currentTime, 0);
                         this.currentTime %= this.frameDuration;
                         this.currentFrameIndex = parseInt(this.currentTime / this.frameDuration) - 1;
                         setTimeout(function(e) {
@@ -554,7 +553,7 @@ window.ferryplayer = {
                 }
                 elm.pause = function() {
                     this.paused = true;
-                    this.audio.pause();
+                    this.audioSource.stop();
                 }
                 elm.played = {
                     start: function(index) {
