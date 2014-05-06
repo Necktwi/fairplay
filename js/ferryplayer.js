@@ -59,12 +59,12 @@ window.ferryplayer = {
             fvideo.classList.add("container");
             this.controls = document.createElement("div");
             this.controls.classList.add("controls");
-            if (!mobile) {
-                this.controls.gauge = this.gauge = document.createElement("div");
-                this.controls.gauge.classList.add("gauge");
-                this.gauge.width = 0;
-                this.controls.gauge.buffers = [];
-            }
+            //if (!mobile) {
+            this.controls.gauge = this.gauge = document.createElement("div");
+            this.controls.gauge.classList.add("gauge");
+            this.gauge.width = 0;
+            this.controls.gauge.buffers = [];
+            //}
             var pause;
             var play;
             var pollingGauge;
@@ -487,7 +487,8 @@ window.ferryplayer = {
                 var elm = document.createElement("img");
                 elm.audio = document.createElement("audio");
                 elm.audio.style.display = "none";
-                elm.audio.src = "data:audio/mp3;base64," + packet.ferrymp3;
+                if (packet.ferrymp3)
+                    elm.audio.src = "data:audio/mp3;base64," + packet.ferrymp3;
                 fvideo.insertAdjacentElement("afterBegin", elm.audio);
                 elm.classList.add("ferrymediasegment");
                 elm.duration = packet.duration;
