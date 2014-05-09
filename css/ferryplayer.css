@@ -14,13 +14,14 @@ root {
 }
 
 .ferryvideo .container{
-    position: absolute;
+    position: relative;
 }
 
 .ferryvideo .controls{
     position: absolute;
     display: none;
     bottom: 0px;
+    width: inherit;
 }
 
 .ferryvideo .controls.visible{
@@ -32,7 +33,7 @@ root {
 }
 
 .ferryvideo .gauge{
-    position: absolute;
+    position: relative;
     height: 6px;
     background-color: black;
     bottom: 0px;
@@ -77,3 +78,50 @@ root {
     width: 0px;
     background-color: white;
 }
+
+.ferryvideo .controls #playbck {
+    position: relative;
+    text-align: center;
+    width: 130px;
+}
+
+.ferryvideo .controls #playbck .buttons {
+    background-image: url('/Pictures/glyphicons-halflings.png');
+    width: 12px;
+    height: 12px;
+    border: 0px;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    margin: 1px;
+    margin-left: 6px;
+    margin-right: 6px;
+}
+
+.ferryvideo .controls #playbck .buttons:hover{
+    background-color: #999
+}
+
+.ferryvideo .controls #playbck #playpause{
+    background-position: -265px -74px;
+}
+
+.ferryvideo .controls #playbck #playpause.pause{
+    background-position: -289px -74px;
+}
+
+.ferryvideo .controls #playbck #rewind{
+    background-position: -241px -74px;
+}
+
+.ferryvideo .controls #playbck #fastForward{
+    background-position: -336px -74px;
+}
+
+.ferryvideo .controls #playbck #skipForward{
+    background-position: -385px -74px;
+}
+
+.ferryvideo .controls #playbck #skipBackward{
+    background-position: -192px -74px;
+}
+

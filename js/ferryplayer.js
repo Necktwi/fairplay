@@ -55,6 +55,16 @@ window.ferryplayer = {
             var mobile = (navigator.userAgent.search("Mobile") > 0);
             var that = this;
             var fvideo = document.createElement("div");
+            if (!fvcontainer.getAttribute("width")) {
+                fvideo.style.width = "320px";
+            } else {
+                fvideo.style.width = fvcontainer.getAttribute("width") + "px";
+            }
+            if (!fvcontainer.getAttribute("height")) {
+                fvideo.style.height = "240px";
+            } else {
+                fvideo.style.height = fvcontainer.getAttribute("height") + "px";
+            }
             fvcontainer.insertAdjacentElement("afterBegin", fvideo);
             fvideo.classList.add("container");
             this.controls = document.createElement("div");
@@ -65,6 +75,33 @@ window.ferryplayer = {
             this.gauge.width = 0;
             this.controls.gauge.buffers = [];
             //}
+            var createPlaybckControls = function() {
+                var playbck = document.createElement("div");
+                playbck.id = "playbck";
+                insertAdjacentElement("beforeEnd", playbck);
+                playbck.playpause = document.createElement("button");
+                playbck.playpause.id = "playpause";
+                playbck.playpause.classList.add("buttons");
+                playbck.insertAdjacentElement("afterBegin", playbck.playpause);
+                playbck.fastForward = document.createElement("button");
+                playbck.fastForward.id = "fastForward";
+                playbck.fastForward.classList.add("buttons");
+                playbck.playpause.insertAdjacentElement("afterEnd", playbck.fastForward);
+                playbck.rewind = document.createElement("button");
+                playbck.rewind.id = "rewind";
+                playbck.rewind.classList.add("buttons");
+                playbck.playpause.insertAdjacentElement("beforeBegin", playbck.rewind);
+                playbck.skipForward = document.createElement("button");
+                playbck.skipForward.id = "skipForward";
+                playbck.skipForward.classList.add("buttons");
+                playbck.fastForward.insertAdjacentElement("afterEnd", playbck.skipForward);
+                playbck.skipBackward = document.createElement("button");
+                playbck.skipBackward.id = "skipBackward";
+                playbck.skipBackward.classList.add("buttons");
+                playbck.rewind.insertAdjacentElement("beforeBegin", playbck.skipBackward);
+                return playbck;
+            }
+            this.controls.playbck = createPlaybckControls();
             var pause;
             var play;
             var pollingGauge;
@@ -116,6 +153,7 @@ window.ferryplayer = {
             this.gauge.insertAdjacentElement("beforeEnd", this.gauge.markFace);
             fvideo.insertAdjacentElement("beforeEnd", this.controls);
             this.controls.insertAdjacentElement("beforeEnd", this.gauge);
+            this.controls.insertAdjacentElement("beforeEnd", this.controls.playbck);
             (this.info = document.createElement("div")).classList.add("info");
             fvideo.insertAdjacentElement("beforeEnd", this.info);
             var bufferedLength = 0;
@@ -359,10 +397,10 @@ window.ferryplayer = {
             var drawplayer = function(video) {
                 var presentvideo = fvideo.getElementsByClassName("ferrymediasegment")[0];
                 if (presentvideo) {
-                    if (!fvcontainer.getAttribute("width")) {
+                    if (!fvcontainer.getAttribute("width") && (fvideo.offsetWidth !== (video.naturalWidth || video.videoWidth))) {
                         fvideo.style.width = presentvideo.offsetWidth + "px";
                     }
-                    if (!fvcontainer.getAttribute("height")) {
+                    if (!fvcontainer.getAttribute("height") && fvideo.offsetHeight !== (video.naturalWidth || video.videoWidth)) {
                         fvideo.style.height = presentvideo.offsetHeight + "px";
                     }
                     presentvideo.parentElement.replaceChild(video, presentvideo);
@@ -370,6 +408,19 @@ window.ferryplayer = {
                     fvideo.insertAdjacentElement("afterBegin", video);
                 }
                 resizeControls();
+            };
+            var resizeControls = function() {
+                if (fvideo.offsetWidth !== that.controls.width || bufferCount !== segments.length) {
+                    that.gauge.style.width = (lastXSegmentSize = that.gauge.width = fvideo.offsetWidth) + "px";
+                    var i = startBuffer;
+                    var st = playlist[startBuffer].tillDuration - playlist[startBuffer].duration;
+                    while (that.gauge.buffers[i]) {
+                        //that.gauge.buffers[i].style.left=that.gauge.buffers[i-1]?(that.gauge.buffers[i-1].offsetLeft+that.gauge.buffers[i-1].offsetWidth);
+                        that.gauge.buffers[i].style.width = (parseInt(((playlist[i].tillDuration - st) / (totalDuration - st)) * (that.gauge.width - 2)) - that.gauge.buffers[i].offsetLeft) + "px";
+                        i++;
+                    }
+                }
+                bufferCount = segments.length;
             };
             var playSegment = function(event, segment, position) {
                 if (event === "loaded" && state !== "paused") {
@@ -416,19 +467,6 @@ window.ferryplayer = {
                 that.controls.classList.remove("visible");
             };
             var bufferCount = 0;
-            var resizeControls = function() {
-                if (fvideo.offsetWidth !== that.controls.width || bufferCount !== segments.length) {
-                    that.gauge.style.width = (lastXSegmentSize = that.gauge.width = fvideo.offsetWidth) + "px";
-                    var i = startBuffer;
-                    var st = playlist[startBuffer].tillDuration - playlist[startBuffer].duration;
-                    while (that.gauge.buffers[i]) {
-                        //that.gauge.buffers[i].style.left=that.gauge.buffers[i-1]?(that.gauge.buffers[i-1].offsetLeft+that.gauge.buffers[i-1].offsetWidth);
-                        that.gauge.buffers[i].style.width = (parseInt(((playlist[i].tillDuration - st) / (totalDuration - st)) * (that.gauge.width - 2)) - that.gauge.buffers[i].offsetLeft) + "px";
-                        i++;
-                    }
-                }
-                bufferCount = segments.length;
-            };
             var updatePlayProgress = function() {
                 fillFraction = (segments[segments.currentsegmentindex].currentTime / segments[segments.currentsegmentindex].duration);
                 if (fillFraction >= 1) {
