@@ -1,6 +1,9 @@
-//Author: Gowtham
-//Copyright 2013 Ferryfair, Inc.
-//2013/05/20 10:01:00
+/**
+ *@author Gowtham
+ *Copyright 2013 Ferryfair, Inc.
+ *2013/05/20 10:01:00
+ *@fileOverview ferryplayer object code that controls all elements of @class ferryvideo and plays media content systematically.
+ */
 
 window.ferryplayer = {
     init: function() {
@@ -107,8 +110,23 @@ window.ferryplayer = {
             var pollingGauge;
             var live;
             var onendedevt = document.createEvent("Event");
+            /**
+             * starting buffer index of buffered segments. old segments are deleted if segment count exceeds @constant bufferSize
+             * @type Number
+             */
             var startBuffer = 0;
+            /**
+             * Number segments buffered
+             * @type Number
+             * @constant
+             */
             var bufferSize = 30;
+            /**
+             * To avoid resize of gauge fills for every new segment during live session gaugeBufferDuration of gauge space is preallocated.
+             * @type Number
+             * @constant
+             */
+            var gaugeBufferDuration = 15;
             onendedevt.initEvent("ended", true, true);
             var frameoverevt = document.createEvent("Event");
             frameoverevt.initEvent("frameover", true, true);
@@ -396,27 +414,42 @@ window.ferryplayer = {
             };
             var drawplayer = function(video) {
                 var presentvideo = fvideo.getElementsByClassName("ferrymediasegment")[0];
+                var sizeChanged = false;
+                if (!fvcontainer.getAttribute("width") && (fvideo.offsetWidth !== (video.naturalWidth || video.videoWidth))) {
+                    fvideo.style.width = (video.naturalWidth || video.videoWidth) + "px";
+                    sizeChanged = true;
+                }
+                if (!fvcontainer.getAttribute("height") && fvideo.offsetHeight !== (video.naturalWidth || video.videoWidth)) {
+                    fvideo.style.height = (video.naturalHeight || video.videoHeight) + "px";
+                    sizeChanged = true;
+                }
                 if (presentvideo) {
-                    if (!fvcontainer.getAttribute("width") && (fvideo.offsetWidth !== (video.naturalWidth || video.videoWidth))) {
-                        fvideo.style.width = presentvideo.offsetWidth + "px";
-                    }
-                    if (!fvcontainer.getAttribute("height") && fvideo.offsetHeight !== (video.naturalWidth || video.videoWidth)) {
-                        fvideo.style.height = presentvideo.offsetHeight + "px";
-                    }
                     presentvideo.parentElement.replaceChild(video, presentvideo);
                 } else {
                     fvideo.insertAdjacentElement("afterBegin", video);
                 }
-                resizeControls();
+                if (sizeChanged) {
+                    resizeControls();
+                }
             };
+            /**
+             * no of seconds flowed through gauge
+             * @type @exp;window@pro;ferryplayer@pro;player@pro;gaugeBufferDuration
+             */
+            var timeFlowedThroughGauge=gaugeBufferDuration;
             var resizeControls = function() {
-                if (fvideo.offsetWidth !== that.controls.width || bufferCount !== segments.length) {
+                if (fvideo.offsetWidth !== that.controls.width || bufferCount !== segments.length || totalDuration > timeFlowedThroughGauge) {
                     that.gauge.style.width = (lastXSegmentSize = that.gauge.width = fvideo.offsetWidth) + "px";
                     var i = startBuffer;
+                    /**
+                     * st is total duration of clipped segments that is a need to subtract from total duration of segments received
+                     * @type @arr;playlist@pro;duration|@arr;playlist@pro;tillDuration
+                     */
                     var st = playlist[startBuffer].tillDuration - playlist[startBuffer].duration;
+                    timeFlowedThroughGauge=playlist[playlist.length-1].tillDuration-st+gaugeBufferDuration;
                     while (that.gauge.buffers[i]) {
                         //that.gauge.buffers[i].style.left=that.gauge.buffers[i-1]?(that.gauge.buffers[i-1].offsetLeft+that.gauge.buffers[i-1].offsetWidth);
-                        that.gauge.buffers[i].style.width = (parseInt(((playlist[i].tillDuration - st) / (totalDuration - st)) * (that.gauge.width - 2)) - that.gauge.buffers[i].offsetLeft) + "px";
+                        that.gauge.buffers[i].style.width = (parseInt(((playlist[i].tillDuration - st) / (totalDuration + gaugeBufferDuration - st)) * (that.gauge.width - 2)) - that.gauge.buffers[i].offsetLeft) + "px";
                         i++;
                     }
                 }
@@ -523,6 +556,7 @@ window.ferryplayer = {
             }
             function newFramio(packet) {
                 var elm = document.createElement("img");
+                elm.src = "data:image/jpeg;base64," + this.frames[this.currentFrameIndex];
                 elm.audio = document.createElement("audio");
                 elm.audio.style.display = "none";
                 if (packet.ferrymp3)
