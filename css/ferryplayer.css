@@ -82,7 +82,7 @@ root {
 .ferryvideo .controls #playbck {
     position: relative;
     text-align: center;
-    width: 130px;
+    background-color: rgba(255,255,255,0.2);
 }
 
 .ferryvideo .controls #playbck .buttons {
@@ -95,6 +95,7 @@ root {
     margin: 1px;
     margin-left: 6px;
     margin-right: 6px;
+    margin-bottom: 3px;
 }
 
 .ferryvideo .controls #playbck .buttons:hover{

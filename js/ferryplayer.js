@@ -58,16 +58,6 @@ window.ferryplayer = {
             var mobile = (navigator.userAgent.search("Mobile") > 0);
             var that = this;
             var fvideo = document.createElement("div");
-            if (!fvcontainer.getAttribute("width")) {
-                fvideo.style.width = "320px";
-            } else {
-                fvideo.style.width = fvcontainer.getAttribute("width") + "px";
-            }
-            if (!fvcontainer.getAttribute("height")) {
-                fvideo.style.height = "240px";
-            } else {
-                fvideo.style.height = fvcontainer.getAttribute("height") + "px";
-            }
             fvcontainer.insertAdjacentElement("afterBegin", fvideo);
             fvideo.classList.add("container");
             this.controls = document.createElement("div");
@@ -75,7 +65,17 @@ window.ferryplayer = {
             //if (!mobile) {
             this.controls.gauge = this.gauge = document.createElement("div");
             this.controls.gauge.classList.add("gauge");
-            this.gauge.width = 0;
+            if (!fvcontainer.getAttribute("width")) {
+                fvideo.style.width = "320px";
+                that.gauge.width = 320;
+            } else {
+                fvideo.style.width = (that.gauge.width = fvcontainer.getAttribute("width")) + "px";
+            }
+            if (!fvcontainer.getAttribute("height")) {
+                fvideo.style.height = "240px";
+            } else {
+                fvideo.style.height = fvcontainer.getAttribute("height") + "px";
+            }
             this.controls.gauge.buffers = [];
             //}
             var createPlaybckControls = function() {
@@ -195,7 +195,7 @@ window.ferryplayer = {
             segments.currentsegmentindex = -1;
             this.gauge.addEventListener("mouseover", function() {
                 var x = event.pageX - that.controls.gauge.offsetLeft - 8;
-                var st = playlist[startBuffer].tillDuration - playlist[startBuffer].duration;
+                var st = playlist.length === 0 ? 0 : (playlist[startBuffer].tillDuration - playlist[startBuffer].duration);
                 var mark = parseInt(st + (x / that.controls.gauge.width) * (totalDuration - st));
                 that.controls.gauge.markFace.style.left = x + "px";
                 that.gauge.markFace.classList.add("visible");
@@ -208,7 +208,7 @@ window.ferryplayer = {
 
 
             fvideo.addEventListener("resize", function() {
-                resizeControls();
+                resizeControls(true);
             }, false);
             if (fvcontainer.getAttribute("data-controls") !== "show") {
                 fvideo.addEventListener("mouseout", function() {
@@ -249,6 +249,9 @@ window.ferryplayer = {
                                 var buf = createBuf();
                                 buf.totalDuration = that.gauge.buffers;
                                 buf.duration = video.duration;
+                                var st = playlist[startBuffer].tillDuration - playlist[startBuffer].duration;
+                                //buf.style.width = ((that.gauge.width - 2) * buf.duration / timeFlowedThroughGauge) + "px";
+                                buf.style.width = (initialResizeControls ? (parseInt(((playlist[playlist.length - 1].tillDuration - st) / (timeFlowedThroughGauge - st)) * (that.gauge.offsetWidth - 2)) - buf.offsetLeft) : 0) + "px";
                             }
                             video.onplayend = function() {
                                 state = "seeknext";
@@ -293,7 +296,7 @@ window.ferryplayer = {
                             processPacket(pck);
                         }
                     }
-                    this.launchpad.ferry.__proto__.send("{path:\"" + this.path + "\"}");
+                    this.launchpad.ferry.__proto__.send("{path:\"" + this.path + "\",bufferSize:" + bufferSize + "}");
                 } else {
                     pollingGauge = true;
                     m3ul = initParams.split("\n");
@@ -437,8 +440,9 @@ window.ferryplayer = {
              */
             var timeFlowedThroughGauge = gaugeBufferDuration;
             var finalTotalDuration;
-            var resizeControls = function() {
-                if (fvideo.offsetWidth !== that.controls.width || totalDuration > timeFlowedThroughGauge) {
+            var initialResizeControls;
+            var resizeControls = function(force) {
+                if (fvideo.offsetWidth !== that.controls.offsetWidth || totalDuration > timeFlowedThroughGauge || force) {
                     that.gauge.style.width = (lastXSegmentSize = that.gauge.width = fvideo.offsetWidth) + "px";
                     var i = startBuffer;
                     /**
@@ -452,6 +456,9 @@ window.ferryplayer = {
                         that.gauge.buffers[i].style.width = (parseInt(((playlist[i].tillDuration - st) / (timeFlowedThroughGauge - st)) * (that.gauge.width - 2)) - that.gauge.buffers[i].offsetLeft) + "px";
                         i++;
                     }
+                    initialResizeControls = true;
+                } else if (totalDuration <= timeFlowedThroughGauge) {
+
                 }
             };
             var playSegment = function(event, segment, position) {
