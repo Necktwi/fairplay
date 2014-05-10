@@ -436,9 +436,10 @@ window.ferryplayer = {
              * no of seconds flowed through gauge
              * @type @exp;window@pro;ferryplayer@pro;player@pro;gaugeBufferDuration
              */
-            var timeFlowedThroughGauge=gaugeBufferDuration;
+            var timeFlowedThroughGauge = gaugeBufferDuration;
+            var finalTotalDuration;
             var resizeControls = function() {
-                if (fvideo.offsetWidth !== that.controls.width || bufferCount !== segments.length || totalDuration > timeFlowedThroughGauge) {
+                if (fvideo.offsetWidth !== that.controls.width || totalDuration > timeFlowedThroughGauge) {
                     that.gauge.style.width = (lastXSegmentSize = that.gauge.width = fvideo.offsetWidth) + "px";
                     var i = startBuffer;
                     /**
@@ -446,14 +447,13 @@ window.ferryplayer = {
                      * @type @arr;playlist@pro;duration|@arr;playlist@pro;tillDuration
                      */
                     var st = playlist[startBuffer].tillDuration - playlist[startBuffer].duration;
-                    timeFlowedThroughGauge=playlist[playlist.length-1].tillDuration-st+gaugeBufferDuration;
+                    timeFlowedThroughGauge = finalTotalDuration > 0 ? finalTotalDuration : totalDuration + gaugeBufferDuration;
                     while (that.gauge.buffers[i]) {
                         //that.gauge.buffers[i].style.left=that.gauge.buffers[i-1]?(that.gauge.buffers[i-1].offsetLeft+that.gauge.buffers[i-1].offsetWidth);
-                        that.gauge.buffers[i].style.width = (parseInt(((playlist[i].tillDuration - st) / (totalDuration + gaugeBufferDuration - st)) * (that.gauge.width - 2)) - that.gauge.buffers[i].offsetLeft) + "px";
+                        that.gauge.buffers[i].style.width = (parseInt(((playlist[i].tillDuration - st) / (timeFlowedThroughGauge - st)) * (that.gauge.width - 2)) - that.gauge.buffers[i].offsetLeft) + "px";
                         i++;
                     }
                 }
-                bufferCount = segments.length;
             };
             var playSegment = function(event, segment, position) {
                 if (event === "loaded" && state !== "paused") {
@@ -499,7 +499,6 @@ window.ferryplayer = {
             var hideControls = function() {
                 that.controls.classList.remove("visible");
             };
-            var bufferCount = 0;
             var updatePlayProgress = function() {
                 fillFraction = (segments[segments.currentsegmentindex].currentTime / segments[segments.currentsegmentindex].duration);
                 if (fillFraction >= 1) {
