@@ -81,7 +81,6 @@ window.ferryplayer = {
             var createPlaybckControls = function() {
                 var playbck = document.createElement("div");
                 playbck.id = "playbck";
-                insertAdjacentElement("beforeEnd", playbck);
                 playbck.playpause = document.createElement("button");
                 playbck.playpause.id = "playpause";
                 playbck.playpause.classList.add("buttons");
