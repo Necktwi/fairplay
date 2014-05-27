@@ -106,8 +106,12 @@ root {
     background-position: -265px -74px;
 }
 
-.ferryvideo .controls #playbck #playpause.pause{
+.ferryvideo .controls #playbck #playpause.play{
     background-position: -289px -74px;
+}
+
+.ferryvideo .controls #playbck #playpause.pause{
+    background-position: -265px -74px;
 }
 
 .ferryvideo .controls #playbck #rewind{
