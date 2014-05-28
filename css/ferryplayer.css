@@ -99,7 +99,11 @@ root {
 }
 
 .ferryvideo .controls #playbck .buttons:hover{
-    background-color: #999
+    background-image: url('/Pictures/glyphicons-halflings_bright.png');
+}
+
+.ferryvideo .controls #playbck .buttons:focus {
+    outline: none !important;
 }
 
 .ferryvideo .controls #playbck #playpause{

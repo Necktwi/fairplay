@@ -6,6 +6,18 @@
  */
 
 window.ferryplayer = {
+    debug: 0,
+    logs: [],
+    log: function(msg) {
+        var obj = new Object();
+        obj.ts = (new Date()).getTime();
+        obj.msg = msg;
+        if ((ferryplayer.debug & 1) === 1) {
+            console.log(obj.msg);
+        }
+        ferryplayer.logs.push(obj);
+        return obj;
+    },
     init: function() {
         //debugger;
         var ferryvideos = document.getElementsByClassName("ferryvideo");
@@ -85,22 +97,57 @@ window.ferryplayer = {
                 playbck.playpause.id = "playpause";
                 playbck.playpause.classList.add("buttons");
                 playbck.playpause.classList.add("play");
+                playbck.playpause.addEventListener("mouseup", function() {
+                    if (event.stopPropagation)
+                        event.stopPropagation();
+                    if (event.cancelBubble !== null)
+                        event.cancelBubble = true;
+                    pauseplay();
+                }, false);
                 playbck.insertAdjacentElement("afterBegin", playbck.playpause);
                 playbck.fastForward = document.createElement("button");
                 playbck.fastForward.id = "fastForward";
                 playbck.fastForward.classList.add("buttons");
+                playbck.fastForward.addEventListener("mouseup", function() {
+                    if (event.stopPropagation)
+                        event.stopPropagation();
+                    if (event.cancelBubble !== null)
+                        event.cancelBubble = true;
+                    skipToNext();
+                }, false);
                 playbck.playpause.insertAdjacentElement("afterEnd", playbck.fastForward);
                 playbck.rewind = document.createElement("button");
                 playbck.rewind.id = "rewind";
                 playbck.rewind.classList.add("buttons");
+                playbck.rewind.addEventListener("mouseup", function() {
+                    if (event.stopPropagation)
+                        event.stopPropagation();
+                    if (event.cancelBubble !== null)
+                        event.cancelBubble = true;
+                    skipToPrevious();
+                }, false);
                 playbck.playpause.insertAdjacentElement("beforeBegin", playbck.rewind);
                 playbck.skipForward = document.createElement("button");
                 playbck.skipForward.id = "skipForward";
                 playbck.skipForward.classList.add("buttons");
+                playbck.skipForward.addEventListener("mouseup", function() {
+                    if (event.stopPropagation)
+                        event.stopPropagation();
+                    if (event.cancelBubble !== null)
+                        event.cancelBubble = true;
+                    skipToEnd();
+                }, false);
                 playbck.fastForward.insertAdjacentElement("afterEnd", playbck.skipForward);
                 playbck.skipBackward = document.createElement("button");
                 playbck.skipBackward.id = "skipBackward";
                 playbck.skipBackward.classList.add("buttons");
+                playbck.skipBackward.addEventListener("mouseup", function() {
+                    if (event.stopPropagation)
+                        event.stopPropagation();
+                    if (event.cancelBubble !== null)
+                        event.cancelBubble = true;
+                    skipToStart();
+                }, false);
                 playbck.rewind.insertAdjacentElement("beforeBegin", playbck.skipBackward);
                 return playbck;
             }
@@ -131,7 +178,7 @@ window.ferryplayer = {
             var frameoverevt = document.createEvent("Event");
             frameoverevt.initEvent("frameover", true, true);
             var clipToBufferSize = function() {
-                if (bufferSize && that.gauge.buffers.length > bufferSize) {
+                if (bufferSize && state !== "paused" && that.gauge.buffers.length > bufferSize) {
                     playSegment("clipToBuffer");
                     delete playlist[startBuffer];
                     delete segments[startBuffer];
@@ -146,6 +193,25 @@ window.ferryplayer = {
                 segments[segments.currentsegmentindex].currentTime = 0;
                 segments.currentsegmentindex = this.index;
                 playSegment("seek", segments[this.index], parseInt((event.offsetX / this.offsetWidth) * playlist[this.index].duration));
+            };
+            var seekSegment = function(segmentindex) {
+                if (segments[segmentindex]) {
+                    if (segmentindex !== segments.currentsegmentindex) {
+                        if (state === "playing") {
+                            try {
+                                segments[segments.currentsegmentindex].pause();
+                            } catch (e) {
+                            }
+                            play();
+                        } else {
+                            segments.currentsegmentindex = segmentindex;
+                            play();
+                            drawplayer(segments[segments.currentsegmentindex]);
+                        }
+                    }
+                } else {
+                    return -1;
+                }
             };
             function createBuf() {
                 var buf = document.createElement("div");
@@ -222,7 +288,7 @@ window.ferryplayer = {
             } else {
                 that.controls.classList.add("visible");
             }
-            fvideo.addEventListener("mousedown", function() {
+            fvideo.addEventListener("mouseup", function() {
                 pauseplay();
             });
             var validURI = function(uri) {
@@ -254,8 +320,11 @@ window.ferryplayer = {
                                 var st = playlist[startBuffer].tillDuration - playlist[startBuffer].duration;
                                 //buf.style.width = ((that.gauge.width - 2) * buf.duration / timeFlowedThroughGauge) + "px";
                                 if (playlist[playlist.length - 1].tillDuration > timeFlowedThroughGauge) {
-                                    resizeControls(true);
-                                    console.log("buffer length overflowed");
+                                    try {
+                                        resizeControls(true);
+                                    } catch (e) {
+                                    }
+                                    //console.log("buffer length overflowed");
                                 } else {
                                     var width = (initialResizeControls ? (parseInt(((playlist[playlist.length - 1].tillDuration - st) / (timeFlowedThroughGauge - st)) * (that.gauge.offsetWidth - 2)) - buf.offsetLeft) : 0);
                                     buf.style.width = width + "px";
@@ -466,6 +535,7 @@ window.ferryplayer = {
                         that.gauge.buffers[i].style.width = (parseInt(((playlist[i].tillDuration - st) / (timeFlowedThroughGauge - st)) * (that.gauge.width - 2)) - that.gauge.buffers[i].offsetLeft) + "px";
                         i++;
                     }
+                    updatePlayProgress();
                     initialResizeControls = true;
                 } else if (totalDuration <= timeFlowedThroughGauge) {
 
@@ -491,6 +561,7 @@ window.ferryplayer = {
                 } else if (event === "clipToBuffer") {
                     if (segments.currentsegmentindex === startBuffer) {
                         var ps = state;
+                        segments[segments.currentsegmentindex].pause();
                         playNextSegment();
                         if (ps === "paused") {
                             pause();
@@ -535,32 +606,69 @@ window.ferryplayer = {
                 }
             };
             var pauseplay = function() {
-                if (!segments[segments.currentsegmentindex].paused) {
+                if (state === "playing") {
                     state = "paused";
-                    segments[segments.currentsegmentindex].pause();
-                    stopTrackingPlayProgress();
+                    pause();
                 } else {
                     state = "playing";
-                    if (segments.currentsegmentindex === segments.length - 1 && segments[segments.currentsegmentindex].currentTime === segments[segments.currentsegmentindex].played.end(0)) {
-                        segments.currentsegmentindex = 0;
-                        drawplayer(segments[0]);
-                    }
-                    segments[segments.currentsegmentindex].play();
-                    trackPlayProgress();
+                    play();
                 }
             };
             pause = this.pause = function() {
                 state = "paused";
                 segments[segments.currentsegmentindex].pause();
                 that.controls.playbck.playpause.classList.remove("play");
+                that.controls.playbck.playpause.classList.add("pause");
                 stopTrackingPlayProgress();
             };
             play = this.play = function() {
                 segments[segments.currentsegmentindex].play();
+                that.controls.playbck.playpause.classList.remove("pause");
                 that.controls.playbck.playpause.classList.add("play");
                 trackPlayProgress();
             };
-
+            var skipToNext = this.skipToNext = function() {
+                if (segments.currentsegmentindex < segments.length - 1) {
+                    if (state === "playing")
+                        segments[segments.currentsegmentindex].pause();
+                    segments.currentsegmentindex++;
+                    if (state === "playing")
+                        segments[segments.currentsegmentindex].play();
+                    updatePlayProgress();
+                    drawplayer(segments[segments.currentsegmentindex]);
+                }
+            }
+            var skipToPrevious = this.skipToPrevious = function() {
+                if (segments.currentsegmentindex > startBuffer) {
+                    if (segments.currentsegmentindex > startBuffer) {
+                        if (state === "playing")
+                            segments[segments.currentsegmentindex].pause();
+                        segments.currentsegmentindex--;
+                        if (state === "playing")
+                            segments[segments.currentsegmentindex].play();
+                        updatePlayProgress();
+                        drawplayer(segments[segments.currentsegmentindex]);
+                    }
+                }
+            }
+            var skipToEnd = this.skipToEnd = function() {
+                if (state === "playing")
+                    segments[segments.currentsegmentindex].pause();
+                segments.currentsegmentindex = segments.length - 1;
+                if (state === "playing")
+                    segments[segments.currentsegmentindex].play();
+                updatePlayProgress();
+                drawplayer(segments[segments.currentsegmentindex]);
+            }
+            var skipToStart = this.skipToStart = function() {
+                if (state === "playing")
+                    segments[segments.currentsegmentindex].pause();
+                segments.currentsegmentindex = startBuffer;
+                if (state === "playing")
+                    segments[segments.currentsegmentindex].play();
+                updatePlayProgress();
+                drawplayer(segments[segments.currentsegmentindex]);
+            }
             function trackPlayProgress() {
                 if (pollingGauge) {
                     playProgressInterval = setInterval(updatePlayProgress, 50);
@@ -586,7 +694,7 @@ window.ferryplayer = {
                 elm.currentTime = 0;
                 elm.paused = true;
                 //elm.onendedevt = document.createEvent("Event");
-                elm.index = packet.index;
+                elm.trueIndex = packet.index;
                 //elm.onendedevt.initEvent("ended", true, true); //true for can bubble, true for cancelable
                 //elm.frameover = document.createEvent("Event");
                 //elm.frameover.initEvent("ended", true, true);
@@ -599,6 +707,9 @@ window.ferryplayer = {
                         if (this.frames[this.currentFrameIndex]) {
                             this.currentTime += this.frameDuration;
                             this.src = "data:image/jpeg;base64," + this.frames[this.currentFrameIndex];
+                            if ((ferryplayer.debug & 2) === 2) {
+                                ferryplayer.log("loadNextFrame:" + this.index + "," + this.currentFrameIndex);
+                            }
                             setTimeout(function(e) {
                                 e.loadNextFrame();
                             }, (this.frameDuration * 1000), this);
