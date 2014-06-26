@@ -13,18 +13,18 @@ root {
     position: relative;
 }
 
-.ferryvideo .container{
+.ferryvideo #container{
     position: relative;
 }
 
-.ferryvideo .controls{
+.ferryvideo #controls{
     position: absolute;
     display: none;
     bottom: 0px;
     width: inherit;
 }
 
-.ferryvideo .controls.visible{
+.ferryvideo #controls.visible{
     display:block;
 }
 
@@ -32,7 +32,7 @@ root {
     position: absolute;
 }
 
-.ferryvideo .gauge{
+.ferryvideo #gauge{
     position: relative;
     height: 6px;
     background-color: black;
@@ -41,7 +41,7 @@ root {
     cursor: pointer;
 }
 
-.ferryvideo .gauge .buffer{
+.ferryvideo #gauge .buffer{
     position: relative;
     height: 4px;
     top: 1px;
@@ -51,7 +51,7 @@ root {
     float: left;
 }
 
-.ferryvideo .gauge .slider{
+.ferryvideo #gauge #slider{
     position: absolute;
     top: 1px;
     left: 1px;
@@ -60,7 +60,7 @@ root {
     background-color: red;
 }
 
-.ferryvideo .gauge .markFace{
+.ferryvideo #gauge #markFace{
     position: absolute;
     display: none;
     height: 14px;
@@ -68,69 +68,72 @@ root {
     top: -14px;
     font-size: 14px;
 }
-.ferryvideo .gauge .markFace.visible{
+.ferryvideo #gauge #markFace.visible{
     display:block;
 }
 
-.ferryvideo .gauge .buffer .fill{
+.ferryvideo #gauge .buffer .fill{
     position: relative;
     height: 3px;
     width: 0px;
     background-color: white;
 }
 
-.ferryvideo .controls #playbck {
+.ferryvideo #controls #playbck {
     position: relative;
     text-align: center;
     background-color: rgba(255,255,255,0.2);
 }
 
-.ferryvideo .controls #playbck .buttons {
+.ferryvideo #controls #playbck .buttons {
     background-image: url('/Pictures/glyphicons-halflings.png');
-    width: 12px;
+    width: 24px;
     height: 12px;
     border: 0px;
     background-color: transparent;
     background-repeat: no-repeat;
     margin: 1px;
-    margin-left: 6px;
-    margin-right: 6px;
+    margin-left: 0px;
+    margin-right: 0px;
     margin-bottom: 3px;
+    padding-left: 0px;
+    padding-right: 0px;
+    vertical-align: middle;
 }
 
-.ferryvideo .controls #playbck .buttons:hover{
+.ferryvideo #controls #playbck .buttons:hover{
     background-image: url('/Pictures/glyphicons-halflings_bright.png');
 }
 
-.ferryvideo .controls #playbck .buttons:focus {
+.ferryvideo #controls #playbck .buttons:focus {
     outline: none !important;
 }
 
-.ferryvideo .controls #playbck #playpause{
-    background-position: -265px -74px;
+.ferryvideo #controls #playbck #playpause{
+    background-position: -259px -74px;
 }
 
-.ferryvideo .controls #playbck #playpause.play{
-    background-position: -289px -74px;
+.ferryvideo #controls #playbck #playpause.play{
+    background-position: -283px -74px;
 }
 
-.ferryvideo .controls #playbck #playpause.pause{
-    background-position: -265px -74px;
+.ferryvideo #controls #playbck #playpause.pause{
+    background-position: -259px -74px;
 }
 
-.ferryvideo .controls #playbck #rewind{
-    background-position: -241px -74px;
+.ferryvideo #controls #playbck #rewind{
+    background-position: -235px -74px;
 }
 
-.ferryvideo .controls #playbck #fastForward{
-    background-position: -336px -74px;
+.ferryvideo #controls #playbck #fastForward{
+    background-position: -330px -74px;
 }
 
-.ferryvideo .controls #playbck #skipForward{
-    background-position: -385px -74px;
+.ferryvideo #controls #playbck #skipForward{
+    background-position: -379px -74px;
 }
 
-.ferryvideo .controls #playbck #skipBackward{
-    background-position: -192px -74px;
+.ferryvideo #controls #playbck #skipBackward{
+    background-position: -186px -74px;
 }
 

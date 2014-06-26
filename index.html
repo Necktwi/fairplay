@@ -12,7 +12,7 @@
                 var d = document.createElement("div");
                 if (!Element.prototype.insertAdjacentElement) {
                     Element.prototype.insertAdjacentElement = function(position, element) {
-                        if (element.__proto__.__proto__.__proto__ === d.__proto__.__proto__.__proto__) {
+                        if (element.tagName.length > 0) {
                             if (position === "beforeBegin") {
                                 this.parentNode.insertBefore(element, this);
                             } else if (position === "afterBegin") {

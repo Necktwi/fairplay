@@ -30,6 +30,7 @@ window.ferryplayer = {
             fvideo = ferryvideos[i];
             src = fvideo.getAttribute("data-src");
             var path;
+            var protocol;
             if (src.search("fmwsp://") == 0) {
                 var port = "";
                 var pathIndex = -1;
@@ -43,6 +44,7 @@ window.ferryplayer = {
                 port = port.length > 0 ? port : "17291";
                 var dn = src.substring(8, portIndex > 0 ? portIndex : (pathIndex > 0 ? pathIndex : src.length));
                 launchpadURL = "ws://" + dn + ":" + port;
+                protocol = "fairplay";
             } else {
                 launchpadURL = src;
             }
@@ -55,13 +57,14 @@ window.ferryplayer = {
             });
             launchpad.mediaSRC = src;
             launchpad.path = path;
+            launchpad.protocol = protocol ? protocol : undefined;
             launchpad.oncrash = function() {
                 console.log("an error occured");
             };
             launchpad.onclose = function() {
                 console.log("unable to connecto to server");
             }
-            ferry = new ferrytools.ferry(launchpad);
+            ferry = ferrytools.ferry(launchpad);
         }
     },
     players: [],
@@ -72,10 +75,21 @@ window.ferryplayer = {
             var fvideo = document.createElement("div");
             fvcontainer.insertAdjacentElement("afterBegin", fvideo);
             fvideo.classList.add("container");
+            fvideo.setAttribute("id", "container");
             this.controls = document.createElement("div");
+            this.controls.addEventListener("mouseup", controlsmouseupevent, false);
+            var controlsmouseupevent = function() {
+                if (event.stopPropagation)
+                    event.stopPropagation();
+                if (event.cancelBubble !== null)
+                    event.cancelBubble = true;
+                console.log("controls mouseup");
+            };
             this.controls.classList.add("controls");
+            this.controls.setAttribute("id", "controls");
             //if (!mobile) {
             this.controls.gauge = this.gauge = document.createElement("div");
+            this.controls.gauge.setAttribute("id", "gauge");
             this.controls.gauge.classList.add("gauge");
             if (!fvcontainer.getAttribute("width")) {
                 fvideo.style.width = "320px";
@@ -189,6 +203,7 @@ window.ferryplayer = {
             }
             var seekPosition = function() {
                 event.cancelBubble = true;
+                console.log("gauge buf mouse up");
                 pause();
                 segments[segments.currentsegmentindex].currentTime = 0;
                 segments.currentsegmentindex = this.index;
@@ -213,6 +228,13 @@ window.ferryplayer = {
                     return -1;
                 }
             };
+            /**
+             * It holds the slider and enables user to release it on specific position to seek
+             * @returns {undefined}
+             */
+            var holdSlider = function() {
+                console.log("mousedown");
+            };
             function createBuf() {
                 var buf = document.createElement("div");
                 buf.style.width = "0px";
@@ -227,13 +249,16 @@ window.ferryplayer = {
                 buf.insertAdjacentElement("afterBegin", buf.fill);
                 buf.fill.classList.add("fill");
                 that.gauge.buffers.push(buf);
-                buf.addEventListener("mousedown", seekPosition, false);
+                buf.addEventListener("mousedown", holdSlider, false);
+                buf.addEventListener("mouseup", seekPosition, false);
                 return buf;
             }
             this.gauge.slider = document.createElement("div");
+            this.gauge.slider.setAttribute("id", "slider");
             this.gauge.slider.classList.add("slider");
             this.gauge.insertAdjacentElement("beforeEnd", this.gauge.slider);
             this.gauge.markFace = document.createElement("div");
+            this.gauge.markFace.setAttribute("id", "markFace");
             this.gauge.markFace.classList.add("markFace");
             this.gauge.insertAdjacentElement("beforeEnd", this.gauge.markFace);
             fvideo.insertAdjacentElement("beforeEnd", this.controls);
@@ -298,8 +323,15 @@ window.ferryplayer = {
                 if (src.search("fmwsp://") === 0) {
                     var lastpackindex = -1;
                     var processPacket = function(pck) {
-                        if (pck.index !== lastpackindex) {
+                        if (pck.HuffmanTable) {
+                            that.HuffmanTable = pck.HuffmanTable;
+                        } else if (pck.termpck) {
+                            that.streamEnd = true;
+                        } else if (pck.index !== lastpackindex) {
                             lastpackindex = pck.index;
+                            for (var i in pck.ferryframes) {
+                                pck.ferryframes[i] = ("data:image/jpeg;base64," + pck.ferryframes[i].slice(0, 4) + that.HuffmanTable + pck.ferryframes[i].slice(4));
+                            }
                             var video = newFramio(pck);
                             video.index = segments.length;
                             totalDuration += video.duration;
@@ -356,7 +388,7 @@ window.ferryplayer = {
 //                            }
                         }
                     };
-                    this.launchpad.ferry.__proto__.onmessage = function(e) {
+                    this.launchpad.ferry.onmessage = function(e) {
                         var pck;
                         try {
                             pck = JSON.parse(e.data);
@@ -375,7 +407,7 @@ window.ferryplayer = {
                             processPacket(pck);
                         }
                     }
-                    this.launchpad.ferry.__proto__.send("{path:\"" + this.path + "\",bufferSize:" + bufferSize + "}");
+                    this.launchpad.ferry.send("{path:\"" + this.path + "\",bufferSize:" + bufferSize + "}");
                 } else {
                     pollingGauge = true;
                     m3ul = initParams.split("\n");
@@ -443,38 +475,47 @@ window.ferryplayer = {
                             createBuf();
                         video.player = that;
                         video.classList.add("ferrymediasegment");
+                        video.p = 0;
                         video.onloadprogress = function() {
-                            this.bufferwatch = function() {
-                                try {
-                                    if (parseInt(video.buffered.end(0).toFixed(6) / video.duration) === 1) {
-                                        delete video.bufferwatch;
-                                        clearInterval(video.bufferwatcher);
-                                        delete video.bufferwatcher;
-                                        delete video.onloadprogress;
-                                        setTimeout(function() {
-                                            playSegment("loaded", video);
-                                        }, 0);
-                                        setTimeout(processNextSegment, 0);
-                                        bufferedLength += playlist[arguments.callee.i].duration;
-                                        if (that.gauge) {
-                                            that.gauge.buffers[arguments.callee.i].totalDuration = bufferedLength;
-                                            that.gauge.buffers[arguments.callee.i].duration = playlist[arguments.callee.i].duration;
-                                        }
-                                        bufferedFraction = bufferedLength / totalDuration;
-                                        if (!playProgressInterval) {
-                                            trackPlayProgress();
-                                        } else {
-                                            if (that.gauge)
-                                                that.gauge.buffers[arguments.callee.i].style.width = (parseInt((playlist[arguments.callee.i].tillDuration / totalDuration) * (that.gauge.width - 2)) - that.gauge.buffers[arguments.callee.i].offsetLeft) + "px";
-                                        }
-                                    }
-                                } catch (e) {
-                                    //console.log(e);
-                                }
-                            };
-                            this.bufferwatch.i = segments.length - 1;
-                            this.bufferwatcher = setInterval(this.bufferwatch, 100);
+                            if (!this.bufferwatcher) {
+                                this.bufferwatch.i = segments.length - 1;
+                                this.bufferwatcher = setInterval(this.bufferwatch, 100);
+                            }
                         };
+                        video.bufferwatch = function() {
+                            try {
+                                if (parseInt(video.buffered.end(video.buffered.length - 1).toFixed(6) / video.duration) === 1) {
+                                    delete video.bufferwatch;
+                                    clearInterval(video.bufferwatcher);
+                                    delete video.bufferwatcher;
+                                    video.removeEventListener("progress", video.onloadprogress);
+                                    delete video.onloadprogress;
+                                    setTimeout(function() {
+                                        playSegment("loaded", video);
+                                    }, 0);
+                                    setTimeout(processNextSegment, 0);
+                                    bufferedLength += playlist[arguments.callee.i].duration;
+                                    if (that.gauge) {
+                                        that.gauge.buffers[arguments.callee.i].totalDuration = bufferedLength;
+                                        that.gauge.buffers[arguments.callee.i].duration = playlist[arguments.callee.i].duration;
+                                    }
+                                    bufferedFraction = bufferedLength / totalDuration;
+                                    if (!playProgressInterval) {
+                                        trackPlayProgress();
+                                    } else {
+                                        if (that.gauge)
+                                            that.gauge.buffers[arguments.callee.i].style.width = (parseInt((playlist[arguments.callee.i].tillDuration / totalDuration) * (that.gauge.width - 2)) - that.gauge.buffers[arguments.callee.i].offsetLeft) + "px";
+                                    }
+                                }
+                            } catch (e) {
+                                //console.log(e);
+                            }
+                        };
+                        setTimeout(function() {
+                            if (video.complete) {
+                                console.log("load complete");
+                            }
+                        }, 10);
                         video.onplayend = function() {
                             state = "seeknext";
                             wholePlayedLength += this.duration - playSegmentStartTime;
@@ -482,8 +523,12 @@ window.ferryplayer = {
                             playSegment("ended");
                             setTimeout(processNextSegment, 0);
                         };
+                        video.onvidload = function() {
+                            console.log("loaded");
+                        }
                         video.addEventListener("progress", video.onloadprogress);
                         video.addEventListener("ended", video.onplayend);
+                        video.addEventListener("load", video.onvidload);
                         if (playlist[segments.length - 1].tags[0]) {
                             video.info = playlist[segments.length - 1].tags[0];
                         }
@@ -681,7 +726,7 @@ window.ferryplayer = {
             }
             function newFramio(packet) {
                 var elm = document.createElement("img");
-                elm.src = "data:image/jpeg;base64," + packet.ferryframes[0];
+                elm.src = packet.ferryframes[0];
                 elm.audio = document.createElement("audio");
                 elm.audio.style.display = "none";
                 if (packet.ferrymp3)
@@ -706,7 +751,7 @@ window.ferryplayer = {
                         this.currentFrameIndex++;
                         if (this.frames[this.currentFrameIndex]) {
                             this.currentTime += this.frameDuration;
-                            this.src = "data:image/jpeg;base64," + this.frames[this.currentFrameIndex];
+                            this.src = this.frames[this.currentFrameIndex];
                             if ((ferryplayer.debug & 2) === 2) {
                                 ferryplayer.log("loadNextFrame:" + this.index + "," + this.currentFrameIndex);
                             }
@@ -730,7 +775,7 @@ window.ferryplayer = {
 
                         }
                         this.audio.play();
-                        this.currentTime %= this.frameDuration;
+                        //this.currentTime %= this.frameDuration;
                         this.currentFrameIndex = parseInt(this.currentTime / this.frameDuration) - 1;
                         setTimeout(function(e) {
                             e.loadNextFrame();
