@@ -49,21 +49,34 @@ window.ferryplayer = {
                 launchpadURL = src;
             }
             launchpad = new ferrytools.launchpad(launchpadURL, "", function() {
-                var player = new ferryplayer.player(fvideo, this.mediaSRC, this.ferry.responseText, 2);
-                ferryplayer.players.push(player);
-                player.path = path;
-                player.launchpad = this;
-                player.processSRC();
+                if (!this.reconnect) {
+                    var player = new ferryplayer.player(fvideo, this.mediaSRC, this.ferry.responseText, 2);
+                    ferryplayer.players.push(player);
+                    player.path = path;
+                    player.launchpad = this;
+                    launchpad.player = player;
+                    player.processSRC();
+                } else {
+                    this.player.processSRC();
+                }
             });
             launchpad.mediaSRC = src;
             launchpad.path = path;
             launchpad.protocol = protocol ? protocol : undefined;
             launchpad.oncrash = function() {
-                console.log("an error occured");
+                console.log("an error occured while connecting the server");
+//                var launchpad = this;
+//                setTimeout(function() {
+//                    launchpad.ferry = ferrytools.ferry(launchpad);
+//                }, 2000);
             };
             launchpad.onclose = function() {
-                console.log("unable to connecto to server");
-            }
+                console.log("connection closed.. reconnecting server in 2 seconds.");
+                var launchpad = this;
+                setTimeout(function() {
+                    ferrytools.ferry(launchpad);
+                }, 2000);
+            };
             ferry = ferrytools.ferry(launchpad);
         }
     },
@@ -321,73 +334,91 @@ window.ferryplayer = {
             };
             this.processSRC = function() {
                 if (src.search("fmwsp://") === 0) {
-                    var lastpackindex = -1;
-                    var processPacket = function(pck) {
-                        if (pck.HuffmanTable) {
-                            that.HuffmanTable = pck.HuffmanTable;
-                        } else if (pck.termpck) {
-                            that.streamEnd = true;
-                        } else if (pck.index !== lastpackindex) {
-                            lastpackindex = pck.index;
-                            for (var i in pck.ferryframes) {
-                                pck.ferryframes[i] = ("data:image/jpeg;base64," + pck.ferryframes[i].slice(0, 4) + that.HuffmanTable + pck.ferryframes[i].slice(4));
-                            }
-                            var video = newFramio(pck);
-                            video.index = segments.length;
-                            totalDuration += video.duration;
-                            var play = {
-                                tags: ["index:" + pck.index],
-                                URI: "",
-                                tillDuration: totalDuration,
-                                duration: video.duration
-                            };
-                            playlist.push(play);
-                            segments.push(video);
-                            video.player = that;
-                            video.classList.add("ferrymediasegment");
-                            clipToBufferSize();
-                            if (that.gauge) {
-                                var buf = createBuf();
-                                buf.duration = video.duration;
-                                var st = playlist[startBuffer].tillDuration - playlist[startBuffer].duration;
-                                //buf.style.width = ((that.gauge.width - 2) * buf.duration / timeFlowedThroughGauge) + "px";
-                                if (playlist[playlist.length - 1].tillDuration > timeFlowedThroughGauge) {
-                                    try {
-                                        resizeControls(true);
-                                    } catch (e) {
-                                    }
-                                    //console.log("buffer length overflowed");
-                                } else {
-                                    var width = (initialResizeControls ? (parseInt(((playlist[playlist.length - 1].tillDuration - st) / (timeFlowedThroughGauge - st)) * (that.gauge.offsetWidth - 2)) - buf.offsetLeft) : 0);
-                                    buf.style.width = width + "px";
+                    if (!this.launchpad.reconnect) {
+                        this.launchpad.reconnect = true;
+                        var lastpackindex = -1;
+                        that.launchpad.processPacket = function(pck) {
+                            if (pck.index && pck.index !== lastpackindex) {
+                                lastpackindex = pck.index;
+                                for (var i in pck.ferryframes) {
+                                    pck.ferryframes[i] = ("data:image/jpeg;base64," + pck.ferryframes[i].slice(0, 4) + that.HuffmanTable + pck.ferryframes[i].slice(4));
+                                }
+                                var video = newFramio(pck);
+                                video.index = segments.length;
+                                totalDuration += video.duration;
+                                var play = {
+                                    tags: ["index:" + pck.index],
+                                    URI: "",
+                                    tillDuration: totalDuration,
+                                    duration: video.duration
+                                };
+                                playlist.push(play);
+                                segments.push(video);
+                                video.player = that;
+                                video.classList.add("ferrymediasegment");
+                                clipToBufferSize();
+                                if (that.gauge) {
+                                    var buf = createBuf();
+                                    buf.duration = video.duration;
+                                    var st = playlist[startBuffer].tillDuration - playlist[startBuffer].duration;
+                                    //buf.style.width = ((that.gauge.width - 2) * buf.duration / timeFlowedThroughGauge) + "px";
+                                    if (playlist[playlist.length - 1].tillDuration > timeFlowedThroughGauge) {
+                                        try {
+                                            resizeControls(true);
+                                        } catch (e) {
+                                        }
+                                        //console.log("buffer length overflowed");
+                                    } else {
+                                        var width = (initialResizeControls ? (parseInt(((playlist[playlist.length - 1].tillDuration - st) / (timeFlowedThroughGauge - st)) * (that.gauge.offsetWidth - 2)) - buf.offsetLeft) : 0);
+                                        buf.style.width = width + "px";
 //                                    if (width > 150) {
 //                                        console.log("error");
 //                                    }
-                                }
+                                    }
 //                                console.log("bufwidth:" + (buf.style.width = width + "px"));
-                            }
-                            video.onplayend = function() {
-                                state = "seeknext";
-                                wholePlayedLength += this.duration - playSegmentStartTime;
-                                updatePlayProgress();
-                                playSegment("ended");
-                            };
-                            video.addEventListener("ended", video.onplayend);
-                            video.addEventListener("frameover", updatePlayProgress);
-                            bufferedLength += video.duration;
-                            totalDuration = bufferedLength;
-                            that.gauge.buffers[segments.length - 1].totalDuration = bufferedLength;
-                            setTimeout(function() {
-                                playSegment("loaded", video);
-                            }, 0);
-                            //bufferedFraction = bufferedLength / totalDuration;
+                                }
+                                video.onplayend = function() {
+                                    state = "seeknext";
+                                    wholePlayedLength += this.duration - playSegmentStartTime;
+                                    updatePlayProgress();
+                                    playSegment("ended");
+                                };
+                                video.addEventListener("ended", video.onplayend);
+                                video.addEventListener("frameover", updatePlayProgress);
+                                bufferedLength += video.duration;
+                                totalDuration = bufferedLength;
+                                that.gauge.buffers[segments.length - 1].totalDuration = bufferedLength;
+                                setTimeout(function() {
+                                    playSegment("loaded", video);
+                                }, 0);
+                                //bufferedFraction = bufferedLength / totalDuration;
 //                            if (!playProgressInterval) {
 //                                trackPlayProgress();
 //                            } else {
 //                                that.gauge.buffers[segments.length - 1].style.width = (parseInt((playlist[segments.length - 1].tillDuration / totalDuration) * (that.gauge.width - 2)) - that.gauge.buffers[segments.length - 1].offsetLeft) + "px";
 //                            }
-                        }
-                    };
+                            } else if (pck.HuffmanTable) {
+                                that.HuffmanTable = pck.HuffmanTable;
+                                that.launchpad.session = pck.session;
+                            } else if (pck.termpck) {
+                                that.streamEnd = true;
+                            } else if (pck.reconnect) {
+                                delete that.launchpad.session;
+                                var launchpad = that.launchpad;
+                                setTimeout(function() {
+                                    ferrytools.ferry(launchpad);
+                                }, 0);
+                            } else if (pck.error) {
+                                console.log("error: " + pck.error);
+                            }
+                        };
+                    }
+                    if (!this.launchpad.session) {
+                        this.launchpad.initSendMsg = "{path:\"" + this.path + "\",bufferSize:" + bufferSize + "}";
+                    } else {
+                        this.launchpad.initSendMsg = "{session:" + this.launchpad.session + "}";
+                    }
+                    this.launchpad.ferry.send(this.launchpad.initSendMsg);
                     this.launchpad.ferry.onmessage = function(e) {
                         var pck;
                         try {
@@ -404,10 +435,9 @@ window.ferryplayer = {
 
                             }
                         } else {
-                            processPacket(pck);
+                            that.launchpad.processPacket(pck);
                         }
                     }
-                    this.launchpad.ferry.send("{path:\"" + this.path + "\",bufferSize:" + bufferSize + "}");
                 } else {
                     pollingGauge = true;
                     m3ul = initParams.split("\n");
