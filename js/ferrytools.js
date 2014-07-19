@@ -1,26 +1,61 @@
-//Author: Gowtham
-//Copyright 2013 Ferryfair, Inc.
-//2013/05/13 10:01:00
+// Author: Gowtham
+// Copyright 2013 Ferryfair, Inc.
+// 2013/05/13 10:01:00
+//
+// ferrytools.js
+// Version 1.0
+// 
+// ferrytools.js is free software: you can redistribute it and/or modify
+// it under the terms: 
+// 1. It should not be modified when its copies are redistributed.
+// 1. Author should be mentioned as the key contributor in the modified versions
+//    it.
+// 
+// ferrytools.js is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+// 
 
 /*!
  ferrytools.js
  Version 1.0
  
  ferrytools.js is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+ it under the terms: 
+ 1. this section should not be modified when its 
+ 1. author should be mentioned as the key contributor in the
+ distributed copies of it.
  
- Video.js is distributed in the hope that it will be useful,
+ ferrytools.js is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU Lesser General Public License for more details.
  
  You should have received a copy of the GNU Lesser General Public License
- along with Video.js.  If not, see <http://www.gnu.org/licenses/>.
+ along with ferrytools.js.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 window.ferrytools = {
+    init: function() {
+        if (!Element.prototype.insertAdjacentElement) {
+            Element.prototype.insertAdjacentElement = function(position, element) {
+                if (element.tagName.length > 0) {
+                    if (position === "beforeBegin") {
+                        this.parentNode.insertBefore(element, this);
+                    } else if (position === "afterBegin") {
+                        this.insertBefore(element, this.childNodes[0]);
+                    } else if (position === "beforeEnd") {
+                        this.appendChild(element);
+                    } else if (position === "afterEnd") {
+                        this.parentNode.insertBefore(element, this.nextSibling);
+                    }
+                } else {
+                    throw "Illegal element";
+                }
+            }
+        }
+    },
     launchpad: function(url, content, postExpedition) {
         if (this instanceof arguments.callee) {
             this.url = url;
@@ -34,7 +69,8 @@ window.ferrytools = {
         } else {
             throw 'launchpad object constructor cannot be called as a function';
         }
-    },
+    }
+    ,
     ferry: function(launchpad) {
         var ferry;
         if (launchpad.async === undefined) {
@@ -57,7 +93,7 @@ window.ferrytools = {
             var dn = launchpad.url.substring(5, portIndex > 0 ? portIndex : (pathIndex > 0 ? pathIndex : launchpad.url.length));
             ferry = new WebSocket("ws://" + dn + ":" + port, launchpad.protocol);
             launchpad.ferry = ferry;
-            ferry.responseText = "";    
+            ferry.responseText = "";
             var onopenFired = false;
             ferry.onopen = function() {
                 launchpad.postExpedition();

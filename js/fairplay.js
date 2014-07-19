@@ -1,21 +1,33 @@
-/**
- *@author Gowtham
- *Copyright 2013 Ferryfair, Inc.
- *2013/05/20 10:01:00
- *@fileOverview ferryplayer object code that controls all elements of @class ferryvideo and plays media content systematically.
- */
+// Author: Gowtham
+// Copyright 2013 Ferryfair, Inc.
+// 2013/05/13 10:01:00
+//
+// fairplay.js
+// Version 1.0
+// 
+// fairplay.js is free software: you can redistribute it and/or modify
+// it under the terms: 
+// 1. It should not be modified when its copies are redistributed.
+// 2. Author should be mentioned as the key contributor in the modified versions
+//    it.
+// 
+// ferrytools.js is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+// 
 
-window.ferryplayer = {
+window.fairplay = {
     debug: 0,
     logs: [],
     log: function(msg) {
         var obj = new Object();
         obj.ts = (new Date()).getTime();
         obj.msg = msg;
-        if ((ferryplayer.debug & 1) === 1) {
+        if ((fairplay.debug & 1) === 1) {
             console.log(obj.msg);
         }
-        ferryplayer.logs.push(obj);
+        fairplay.logs.push(obj);
         return obj;
     },
     init: function() {
@@ -50,8 +62,8 @@ window.ferryplayer = {
             }
             launchpad = new ferrytools.launchpad(launchpadURL, "", function() {
                 if (!this.reconnect) {
-                    var player = new ferryplayer.player(fvideo, this.mediaSRC, this.ferry.responseText, 2);
-                    ferryplayer.players.push(player);
+                    var player = new fairplay.player(fvideo, this.mediaSRC, this.ferry.responseText, 2);
+                    fairplay.players.push(player);
                     player.path = path;
                     player.launchpad = this;
                     launchpad.player = player;
@@ -590,7 +602,7 @@ window.ferryplayer = {
             };
             /**
              * no of seconds flowed through gauge
-             * @type @exp;window@pro;ferryplayer@pro;player@pro;gaugeBufferDuration
+             * @type @exp;window@pro;fairplay@pro;player@pro;gaugeBufferDuration
              */
             var timeFlowedThroughGauge = gaugeBufferDuration;
             var finalTotalDuration;
@@ -782,12 +794,12 @@ window.ferryplayer = {
                         if (this.frames[this.currentFrameIndex]) {
                             this.currentTime += this.frameDuration;
                             this.src = this.frames[this.currentFrameIndex];
-                            if ((ferryplayer.debug & 2) === 2) {
-                                ferryplayer.log("loadNextFrame:" + this.index + "," + this.currentFrameIndex);
+                            if ((fairplay.debug & 2) === 2) {
+                                fairplay.log("loadNextFrame:" + this.index + "," + this.currentFrameIndex);
                             }
                             setTimeout(function(e) {
                                 e.loadNextFrame();
-                            }, (this.frameDuration * 1000), this);
+                            }, (this.frameDuration * 980), this);
                             this.dispatchEvent(frameoverevt);
                         } else {
                             this.paused = true;
