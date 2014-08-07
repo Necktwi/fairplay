@@ -18,7 +18,7 @@
 // 
 
 window.fairplay = {
-    debug: 0,
+    debug: 3,
     logs: [],
     log: function(msg) {
         var obj = new Object();
@@ -31,19 +31,18 @@ window.fairplay = {
         return obj;
     },
     init: function() {
-        //debugger;
+        debugger;
         var ferryvideos = document.getElementsByClassName("ferryvideo");
-        var ferry;
-        var launchpad;
-        var launchpadURL;
-        var src;
-        var fvideo;
         for (var i = 0; i < ferryvideos.length; i++) {
-            fvideo = ferryvideos[i];
+            var ferry;
+            var launchpad;
+            var launchpadURL;
+            var src;
+            var fvideo = ferryvideos[i];
             src = fvideo.getAttribute("data-src");
             var path;
             var protocol;
-            if (src.search("fmwsp://") == 0) {
+            if (src.search("fmwsp://") === 0) {
                 var port = "";
                 var pathIndex = -1;
                 var portIndex = -1;
@@ -60,18 +59,21 @@ window.fairplay = {
             } else {
                 launchpadURL = src;
             }
-            launchpad = new ferrytools.launchpad(launchpadURL, "", function() {
+            launchpad = new ferrytools.launchpad(launchpadURL, "", null);
+            launchpad.path = path;
+            launchpad.fvideo = fvideo;
+            launchpad.postExpedition = function() {
                 if (!this.reconnect) {
-                    var player = new fairplay.player(fvideo, this.mediaSRC, this.ferry.responseText, 2);
+                    var player = new fairplay.player(this.fvideo, this.mediaSRC, this.ferry.responseText, 2);
                     fairplay.players.push(player);
-                    player.path = path;
+                    player.path = this.path;
                     player.launchpad = this;
                     launchpad.player = player;
                     player.processSRC();
                 } else {
                     this.player.processSRC();
                 }
-            });
+            };
             launchpad.mediaSRC = src;
             launchpad.path = path;
             launchpad.protocol = protocol ? protocol : undefined;
@@ -660,6 +662,7 @@ window.fairplay = {
                 if (segments[segments.currentsegmentindex + 1]) {
                     playSegmentStartTime = 0;
                     segments.currentsegmentindex++;
+                    segments[segments.currentsegmentindex].currentTime = 0;
                     segments[segments.currentsegmentindex].play();
                     drawplayer(segments[segments.currentsegmentindex]);
                     state = "playing";
