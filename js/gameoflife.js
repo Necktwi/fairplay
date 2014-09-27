@@ -204,7 +204,7 @@ var setup = function() {
     if (h.className == '') {
         var e = gameOfLife(15, 100);
         e.init();
-        e.writeText("ferryplayer");
+        e.writeText("fairplay");
         setTimeout(e.startAnimation, 3e3)
     }
 };
