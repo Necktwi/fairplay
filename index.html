@@ -6,49 +6,67 @@
         <script src="/js/standardizeWeb.js"></script>
         <script src="/js/ferrytools.js"></script>
         <script src="/js/fairplay.js"></script>
-        <script src="/js/angular.min.js"></script>
+        <script src="/js/angular.js"></script>
         <script src="/js/app.js"></script>
         <!--script src="/js/gameoflife.js"></script-->
         <script type="text/javascript">
-            function init() {
-                var d = document.createElement("div");
-                if (!Element.prototype.insertAdjacentElement) {
-                    Element.prototype.insertAdjacentElement = function(position, element) {
-                        if (element.tagName.length > 0) {
-                            if (position === "beforeBegin") {
-                                this.parentNode.insertBefore(element, this);
-                            } else if (position === "afterBegin") {
-                                this.insertBefore(element, this.childNodes[0]);
-                            } else if (position === "beforeEnd") {
-                                this.appendChild(element);
-                            } else if (position === "afterEnd") {
-                                this.parentNode.insertBefore(element, this.nextSibling);
-                            }
-                        } else {
-                            throw "Illegal element";
-                        }
-                    }
-                }
-                ferrytools.init();
-                fairplay.init();
-                //setup(); //gameoflife
-            }
+					function init() {
+					var d = document.createElement("div");
+							if (!Element.prototype.insertAdjacentElement) {
+					Element.prototype.insertAdjacentElement = function(position, element) {
+					if (element.tagName.length > 0) {
+					if (position === "beforeBegin") {
+					this.parentNode.insertBefore(element, this);
+					} else if (position === "afterBegin") {
+					this.insertBefore(element, this.childNodes[0]);
+					} else if (position === "beforeEnd") {
+					this.appendChild(element);
+					} else if (position === "afterEnd") {
+					this.parentNode.insertBefore(element, this.nextSibling);
+					}
+					} else {
+					throw "Illegal element";
+					}
+					}
+					}
+					ferrytools.init();
+							fairplay.init();
+							//setup(); //gameoflife
+					}
         </script>
         <style>
         </style>
     </head>
-    <body onload="init();">
-        <h1>Video Player</h1>
+    <body onload="init();" ng-controller="RemoteController as remote">
+        <h1>FairPlay</h1>
         <p>Watch videos everywhere!</p>
-        <p>If its working u should able to see a sample video playing r8 below.</p>
         <!--div id="myferryvideo1" class="ferryvideo" data-src="/Videos/wr3baseline1.1.mp4.m3u8" data-controls="show"></div-->
         <!--65349-->
-        <div id="myferryvideo1" class="ferryvideo" data-src="fmwsp://newmek7.newmeksolutions.com/kpst22753" data-controls="show" data-bufferDuration="10min" data-bufferlength=""></div>
-        <div id="myferryvideo2" class="ferryvideo" data-src="fmwsp://newmek7.newmeksolutions.com/kpst21490" data-controls="show" data-bufferDuration="10min" data-bufferlength=""></div>
+        <!--div id="myferryvideo1" class="ferryvideo" data-src="fmwsp://newmek7.newmeksolutions.com/kpst22753" data-controls="show" data-bufferDuration="10min" data-bufferlength=""></div-->
+        <!--div id="myferryvideo2" class="ferryvideo" data-src="fmwsp://newmek7.newmeksolutions.com/kpst21490" data-controls="show" data-bufferDuration="10min" data-bufferlength=""></div-->
         <!--video src="video.ogv" controls>
             <object data="flvplayer.swf" type="application/x-shockwave-flash">
                 <param value="flvplayer.swf" name="movie"/>
             </object>
         </video-->
+        <ul id="systems">
+            <li ng-repeat="(sysname,system) in remote.systems">
+                <div id="system-name">{{sysname}}</div>
+                <ul id="cameras">
+                    <li ng-repeat="(camname,cam) in system.cameras">
+                        cam: {{camname}}
+                        <div id="{{camname}}" class="ferryvideo" data-src='{{"fmws://" + remote.streamserver + "/" + sysname + "/" + camname| trusted}}' data-controls="show" data-bufferDuration="{{cam.bufferDuration}}" data-bufferlength=""></div>
+                        <div id="state">state: {{cam.state}}</div>
+                        <div id="set-state">set-state:
+                            <select ng-change="remote.setCamState(sysname, camname)" ng-model="cam.newState">
+                                <option ng-repeat="state in remote.camStates" value="{{state}}">{{state}}</option>
+                            </select>
+                        </div>
+                    </li>
+                </ul>
+                <div id="location">location: {{system.location}}</div>
+                <div id="ip">ip: {{system.ip}}</div>
+            </li>
+        </ul>
     </body>
 </html>
