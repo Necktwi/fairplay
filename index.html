@@ -3,41 +3,41 @@
     <head>
         <meta charset="UTF-8"/>
         <link rel="stylesheet" href="css/fairplay.css" type="text/css">
+        <script type="text/javascript">
+			window.init = function () {
+				var d = document.createElement("div");
+				if (!Element.prototype.insertAdjacentElement) {
+					Element.prototype.insertAdjacentElement = function (position, element) {
+						if (element.tagName.length > 0) {
+							if (position === "beforeBegin") {
+								this.parentNode.insertBefore(element, this);
+							} else if (position === "afterBegin") {
+								this.insertBefore(element, this.childNodes[0]);
+							} else if (position === "beforeEnd") {
+								this.appendChild(element);
+							} else if (position === "afterEnd") {
+								this.parentNode.insertBefore(element, this.nextSibling);
+							}
+						} else {
+							throw "Illegal element";
+						}
+					}
+				}
+				ferrytools.init();
+				fairplay.init();
+				//setup(); //gameoflife
+			}
+        </script>
+        <script src="/js/angular.js"></script>
         <script src="/js/standardizeWeb.js"></script>
         <script src="/js/ferrytools.js"></script>
         <script src="/js/fairplay.js"></script>
-        <script src="/js/angular.js"></script>
         <script src="/js/app.js"></script>
         <!--script src="/js/gameoflife.js"></script-->
-        <script type="text/javascript">
-					function init() {
-					var d = document.createElement("div");
-							if (!Element.prototype.insertAdjacentElement) {
-					Element.prototype.insertAdjacentElement = function(position, element) {
-					if (element.tagName.length > 0) {
-					if (position === "beforeBegin") {
-					this.parentNode.insertBefore(element, this);
-					} else if (position === "afterBegin") {
-					this.insertBefore(element, this.childNodes[0]);
-					} else if (position === "beforeEnd") {
-					this.appendChild(element);
-					} else if (position === "afterEnd") {
-					this.parentNode.insertBefore(element, this.nextSibling);
-					}
-					} else {
-					throw "Illegal element";
-					}
-					}
-					}
-					ferrytools.init();
-							fairplay.init();
-							//setup(); //gameoflife
-					}
-        </script>
         <style>
         </style>
     </head>
-    <body onload="init();" ng-controller="RemoteController as remote">
+    <body onload="" ng-controller="RemoteController" ng-init="window.init()">
         <h1>FairPlay</h1>
         <p>Watch videos everywhere!</p>
         <!--div id="myferryvideo1" class="ferryvideo" data-src="/Videos/wr3baseline1.1.mp4.m3u8" data-controls="show"></div-->
@@ -50,23 +50,23 @@
             </object>
         </video-->
         <ul id="systems">
-            <li ng-repeat="(sysname,system) in remote.systems">
+            <li ng-repeat="(sysname,system) in systems">
                 <div id="system-name">{{sysname}}</div>
                 <ul id="cameras">
                     <li ng-repeat="(camname,cam) in system.cameras">
                         cam: {{camname}}
-                        <div id="{{camname}}" class="ferryvideo" data-src='{{"fmws://" + remote.streamserver + "/" + sysname + "/" + camname| trusted}}' data-controls="show" data-bufferDuration="{{cam.bufferDuration}}" data-bufferlength=""></div>
-                        <div id="state">state: {{cam.state}}</div>
-                        <div id="set-state">set-state:
-                            <select ng-change="remote.setCamState(sysname, camname)" ng-model="cam.newState">
-                                <option ng-repeat="state in remote.camStates" value="{{state}}">{{state}}</option>
-                            </select>
-                        </div>
-                    </li>
-                </ul>
-                <div id="location">location: {{system.location}}</div>
-                <div id="ip">ip: {{system.ip}}</div>
-            </li>
-        </ul>
-    </body>
+						<div id="{{camname}}" class="ferryvideo" data-src='{{"fmwsp://" + streamserver + "/" + sysname + "/" + camname| trusted}}' data-controls="show" data-bufferDuration="{{cam.bufferDuration}}" data-bufferlength=""></div>
+						<div id="state">state: {{cam.state}}</div>
+						<div id="set-state">set-state:
+							<select ng-change="setCamState(sysname, camname)" ng-model="cam.newState">
+								<option ng-repeat="state in camStates" value="{{state}}">{{state}}</option>
+							</select>
+						</div>
+					</li>
+				</ul>
+				<div id="location">location: {{system.location}}</div>
+				<div id="ip">ip: {{system.ip}}</div>
+			</li>
+		</ul>
+	</body>
 </html>

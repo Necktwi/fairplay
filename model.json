@@ -1,0 +1,14 @@
+{
+	"fp4": {
+		"cameras": {
+			"video0": {
+				"bufferDuration": 10,
+				"state": "CAM_OFF",
+				"newState": ""
+			}
+		},
+		"signalstrength": -1,
+		"location": "hyderabad",
+		"ip": ""
+	}
+}
